@@ -1,0 +1,19 @@
+{
+    "name": "cranberry/cli",
+	"description": "A small CLI application library.",
+	"homepage": "https://github.com/cranberry/shell",
+    "type": "library",
+	"license": "MIT",
+    "authors": [
+        {
+            "name": "Ashur Cabrera",
+            "email": "hello@cabreramade.co"
+        }
+    ],
+	"require": {
+        "php": ">=5.6"
+    },
+	"autoload": {
+		"psr-4": { "Cranberry\\Shell\\": "src/" }
+	}
+}
