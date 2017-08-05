@@ -39,6 +39,18 @@ class InputTest extends TestCase
 	}
 
 	/**
+	 * @dataProvider	optionProvider
+	 */
+	public function testConstructorRegistersCommandOptions( $argument, $optionName, $expectedValue )
+	{
+		$arguments = ['salso', 'command', $argument];
+		$input = new Input( $arguments );
+
+		$this->assertSame( $expectedValue, $input->getCommandOption( $optionName ) );
+	}
+
+
+	/**
 	 * @expectedException	LengthException
 	 */
 	public function testEmptyArgumentsArrayThrowsLengthException()
@@ -108,5 +120,21 @@ class InputTest extends TestCase
 		}
 
 		$this->assertSame( $expectedValue, $input->getApplicationOption( $optionName ) );
+	}
+
+	/**
+	 * @dataProvider	optionProvider
+	 */
+	public function testRegisterCommandOption( $argument, $optionName, $expectedValue )
+	{
+		$input = new Input( ['salso'] );
+
+		$result = Input::parseOptionString( $argument );
+		foreach( $result as $optionName => $optionValue )
+		{
+			$input->registerCommandOption( $optionName, $optionValue );
+		}
+
+		$this->assertSame( $expectedValue, $input->getCommandOption( $optionName ) );
 	}
 }

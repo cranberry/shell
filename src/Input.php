@@ -18,6 +18,11 @@ class Input
 	protected $commandName;
 
 	/**
+	 * @var	array
+	 */
+	protected $commandOptions=[];
+
+	/**
 	 * @param	array	$arguments	Array of arguments; like $argv
 	 * @return	void
 	 */
@@ -50,6 +55,24 @@ class Input
 		{
 			$this->commandName = $argument;
 		}
+
+		do
+		{
+			$argument = next( $arguments );
+			$optionData = self::parseOptionString( $argument );
+
+			if( $optionData === false )
+			{
+				break;
+			}
+
+			foreach( $optionData as $optionName => $optionValue )
+			{
+				$this->registerCommandOption( $optionName, $optionValue );
+			}
+		}
+		while( $argument !== false );
+
 	}
 
 	/**
@@ -70,6 +93,18 @@ class Input
 	public function getCommandName()
 	{
 		return $this->commandName;
+	}
+
+	/**
+	 * @param	string	$optionName
+	 * @return	mixed|null
+	 */
+	public function getCommandOption( $optionName )
+	{
+		if( isset( $this->commandOptions[$optionName] ) )
+		{
+			return $this->commandOptions[$optionName];
+		}
 	}
 
 	/**
@@ -153,8 +188,18 @@ class Input
 	 * @param	mixed	$optionValue
 	 * @return	void
 	 */
-	public function registerApplicationOption( $optionName, $optionValue )
+	public function registerApplicationOption( string $optionName, $optionValue )
 	{
 		$this->applicationOptions[$optionName] = $optionValue;
+	}
+
+	/**
+	 * @param	string	$optionName
+	 * @param	mixed	$optionValue
+	 * @return	void
+	 */
+	public function registerCommandOption( string $optionName, $optionValue )
+	{
+		$this->commandOptions[$optionName] = $optionValue;
 	}
 }
