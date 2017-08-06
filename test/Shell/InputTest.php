@@ -49,6 +49,41 @@ class InputTest extends TestCase
 		$this->assertSame( $expectedValue, $input->getCommandOption( $optionName ) );
 	}
 
+	public function testConstructorRegistersCommandOptionsWithNonDeterminantOrder()
+	{
+		$arguments = ['salso', 'command', '--foo', '/path/', '-abc', '--bar'];
+		$input = new Input( $arguments );
+
+		$this->assertSame( true, $input->getCommandOption( 'foo' ) );
+		$this->assertSame( true, $input->getCommandOption( 'a' ) );
+		$this->assertSame( true, $input->getCommandOption( 'b' ) );
+		$this->assertSame( true, $input->getCommandOption( 'c' ) );
+		$this->assertSame( true, $input->getCommandOption( 'bar' ) );
+	}
+
+	public function testConstructorRegistersCommandArguments()
+	{
+		$commandArgument = '/path/';
+		$arguments = ['salso', 'command', '--foo', $commandArgument];
+		$input = new Input( $arguments );
+
+		$commandArguments = $input->getCommandArguments();
+
+		$this->assertTrue( is_array( $commandArguments ) );
+		$this->assertTrue( in_array( $commandArgument, $commandArguments ) );
+	}
+
+	public function testEmptyCommandArgumentNotRegistered()
+	{
+		$commandArgument = '';
+		$input = new Input( ['salso'] );
+
+		$input->registerCommandArgument( $commandArgument );
+		$commandArguments = $input->getCommandArguments();
+
+		$this->assertTrue( is_array( $commandArguments ) );
+		$this->assertEquals( 0, count( $commandArguments ) );
+	}
 
 	/**
 	 * @expectedException	LengthException
@@ -122,6 +157,18 @@ class InputTest extends TestCase
 		}
 
 		$this->assertSame( $expectedValue, $input->getApplicationOption( $optionName ) );
+	}
+
+	public function testRegisterCommandArgument()
+	{
+		$commandArgument = '/path/';
+		$input = new Input( ['salso'] );
+
+		$input->registerCommandArgument( $commandArgument );
+		$commandArguments = $input->getCommandArguments();
+
+		$this->assertTrue( is_array( $commandArguments ) );
+		$this->assertTrue( in_array( $commandArgument, $commandArguments ) );
 	}
 
 	/**

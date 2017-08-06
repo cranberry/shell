@@ -13,6 +13,11 @@ class Input
 	protected $applicationOptions=[];
 
 	/**
+	 * @var	array
+	 */
+	protected $commandArguments=[];
+
+	/**
 	 * @var	string
 	 */
 	protected $commandName;
@@ -94,6 +99,14 @@ class Input
 		{
 			return $this->applicationOptions[$optionName];
 		}
+	}
+
+	/**
+	 * @return	array
+	 */
+	public function getCommandArguments() : array
+	{
+		return $this->commandArguments;
 	}
 
 	/**
@@ -200,6 +213,20 @@ class Input
 	public function registerApplicationOption( string $optionName, $optionValue )
 	{
 		$this->applicationOptions[$optionName] = $optionValue;
+	}
+
+	/**
+	 * @param	string	$argument
+	 * @return	void
+	 */
+	public function registerCommandArgument( string $argument )
+	{
+		if( strlen( $argument ) < 1 )
+		{
+			return;
+		}
+
+		$this->commandArguments[] = $argument;
 	}
 
 	/**
