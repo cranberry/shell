@@ -85,9 +85,11 @@ class InputTest extends TestCase
 
 	/**
 	 * Parsing an option string which does not match `-a`, `-abc`, `--foo`, or
-	 * `--foo=bar should return `false`
+	 * `--foo=bar should throw an exception
+	 *
+	 * @expectedException	InvalidArgumentException
 	 */
-	public function testParseInvalidOptionStringReturnsFalse()
+	public function testParseInvalidOptionStringThrowsException()
 	{
 		$result = Input::parseOptionString( 'foo' );
 		$this->assertFalse( $result );

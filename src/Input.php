@@ -37,20 +37,24 @@ class Input
 		do
 		{
 			$argument = next( $arguments );
-			$optionData = self::parseOptionString( $argument );
 
-			if( $optionData === false )
+			try
+			{
+				$optionData = self::parseOptionString( $argument );
+
+				foreach( $optionData as $optionName => $optionValue )
+				{
+					$this->registerApplicationOption( $optionName, $optionValue );
+				}
+			}
+			catch( \InvalidArgumentException $e )
 			{
 				break;
-			}
-
-			foreach( $optionData as $optionName => $optionValue )
-			{
-				$this->registerApplicationOption( $optionName, $optionValue );
 			}
 		}
 		while( $argument !== false );
 
+		/* Process command name */
 		if( $argument !== false )
 		{
 			$this->commandName = $argument;
@@ -59,20 +63,25 @@ class Input
 		do
 		{
 			$argument = next( $arguments );
-			$optionData = self::parseOptionString( $argument );
 
-			if( $optionData === false )
+			/* Process command option */
+			try
 			{
-				break;
+				$optionData = self::parseOptionString( $argument );
+
+				foreach( $optionData as $optionName => $optionValue )
+				{
+					$this->registerCommandOption( $optionName, $optionValue );
+				}
 			}
 
-			foreach( $optionData as $optionName => $optionValue )
+			/* Process command argument */
+			catch( \InvalidArgumentException $e )
 			{
-				$this->registerCommandOption( $optionName, $optionValue );
+				$this->registerCommandArgument( $argument );
 			}
 		}
 		while( $argument !== false );
-
 	}
 
 	/**
@@ -109,14 +118,14 @@ class Input
 
 	/**
 	 * @param	string	$optionString
-	 * @return	array|false
+	 * @return	array
 	 */
-	public static function parseOptionString( string $optionString )
+	public static function parseOptionString( string $optionString ) : array
 	{
 		/* $optionString must match `-a`, `-abc`, or `--foo` */
 		if( substr( $optionString, 0, 1 ) != '-' )
 		{
-			return false;
+			throw new \InvalidArgumentException( 'Option string should match format "-a", "-abc", "--foo", or "--foo=bar"' );
 		}
 
 		$results = [];
