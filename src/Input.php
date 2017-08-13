@@ -184,6 +184,14 @@ class Input
 	}
 
 	/**
+	 * @return	array
+	 */
+	public function getCommandOptions() : array
+	{
+		return $this->commandOptions;
+	}
+
+	/**
 	 * @param	int		$index
 	 * @param	string	$name
 	 * @return	void

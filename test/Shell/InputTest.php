@@ -126,6 +126,16 @@ class InputTest extends TestCase
 
 		$input->getCommandArgument( false );
 	}
+
+	public function testGetCommandOptionsReturnsArray()
+	{
+		$appName = time();
+		$input = new Input( [$appName] );
+
+		$commandOptions = $input->getCommandOptions();
+		$this->assertSame( [], $commandOptions );
+	}
+
 	public function testGetCommandWithApplicationOptions()
 	{
 		$commandName = 'command-' . time();
