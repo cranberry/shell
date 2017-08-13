@@ -93,6 +93,39 @@ class InputTest extends TestCase
 		$input = new Input( [] );
 	}
 
+	public function testGetCommandArgumentByIndex()
+	{
+		$who = 'Dolly';
+		$input = new Input( ['cranberry', 'hello', $who] );
+
+		$this->assertSame( $who, $input->getCommandArgumentByIndex(0) );
+	}
+
+	public function testGetCommandArgumentWithIntParameterReturnsByIndex()
+	{
+		$input = new Input( ['cranberry', 'hello', 'Dolly'] );
+
+		$this->assertSame( $input->getCommandArgumentByIndex( 0 ), $input->getCommandArgument( 0 ) );
+	}
+
+	public function testGetCommandArgumentWithStringParameterReturnsByName()
+	{
+		$input = new Input( ['cranberry', 'hello', 'Dolly'] );
+
+		$input->nameCommandArgument( 0, 'who' );
+
+		$this->assertSame( $input->getCommandArgumentByName( 'who' ), $input->getCommandArgument( 'who' ) );
+	}
+
+	/**
+	 * @expectedException	InvalidArgumentException
+	 */
+	public function testGetCommandArgumentWithUnsupportedParameterTypeThrowsException()
+	{
+		$input = new Input( ['cranberry', 'hello', 'Dolly'] );
+
+		$input->getCommandArgument( false );
+	}
 	public function testGetCommandWithApplicationOptions()
 	{
 		$commandName = 'command-' . time();
@@ -109,6 +142,50 @@ class InputTest extends TestCase
 		$input = new Input( $arguments );
 
 		$this->assertEquals( $commandName, $input->getCommandName() );
+	}
+
+	/**
+	 * @expectedException	OutOfBoundsException
+	 */
+	public function testGetInvalidCommandArgumentIndexThrowsException()
+	{
+		$input = new Input( ['cranberry', 'hello'] );
+		$input->getCommandArgumentByIndex(0);
+	}
+
+	/**
+	 * @expectedException	OutOfBoundsException
+	 */
+	public function testGetInvalidCommandArgumentByNameThrowsException()
+	{
+		$input = new Input( ['cranberry', 'hello'] );
+
+		$commandArgumentName = 'who';
+		$input->nameCommandArgument( 0, $commandArgumentName );
+		$input->getCommandArgumentByName( $commandArgumentName );
+	}
+
+	/**
+	 * @expectedException	OutOfBoundsException
+	 */
+	public function testGetUnnamedCommandArgumentByNameThrowsException()
+	{
+		$input = new Input( ['cranberry', 'hello'] );
+
+		$commandArgumentName = 'who';
+		$input->getCommandArgumentByName( $commandArgumentName );
+	}
+
+	public function testNameCommandArgument()
+	{
+		$who = 'Dolly';
+		$input = new Input( ['cranberry', 'hello', $who] );
+
+		$commandArgumentName = 'who';
+		$input->nameCommandArgument( 0, $commandArgumentName );
+
+		$this->assertSame( $who, $input->getCommandArgumentByIndex( 0 ) );
+		$this->assertSame( $who, $input->getCommandArgumentByName( $commandArgumentName ) );
 	}
 
 	public function testGetUnknownApplicationOptionReturnsNull()

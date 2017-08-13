@@ -15,6 +15,11 @@ class Input
 	/**
 	 * @var	array
 	 */
+	protected $commandArgumentNames=[];
+
+	/**
+	 * @var	array
+	 */
 	protected $commandArguments=[];
 
 	/**
@@ -110,6 +115,55 @@ class Input
 	}
 
 	/**
+	 * @param	int|string	$query
+	 * @return	string
+	 */
+	public function getCommandArgument( $query ) : string
+	{
+		if( is_string( $query ) )
+		{
+			return $this->getCommandArgumentByName( $query );
+		}
+
+		if( is_int( $query ) )
+		{
+			return $this->getCommandArgumentByIndex( $query );
+		}
+
+		$exceptionMessage = sprintf( 'Argument 1 passed to %s() must be of the type string or int, %s passed', __METHOD__, gettype( $query ) );
+		throw new \InvalidArgumentException( $exceptionMessage );
+	}
+
+	/**
+	 * @param	int		$index
+	 * @return	string
+	 */
+	public function getCommandArgumentByIndex( int $index ) : string
+	{
+		if( !isset( $this->commandArguments[$index] ) )
+		{
+			throw new \OutOfBoundsException( "Invalid command argument index '{$index}'" );
+		}
+
+		return $this->commandArguments[$index];
+	}
+
+	/**
+	 * @param	string	$name
+	 * @return	string
+	 */
+	public function getCommandArgumentByName( $name ) : string
+	{
+		if( !isset( $this->commandArgumentNames[$name] ) )
+		{
+			throw new \OutOfBoundsException( "Invalid named argument '{$name}'" );
+		}
+
+		$index = $this->commandArgumentNames[$name];
+		return $this->getCommandArgumentByIndex( $index );
+	}
+
+	/**
 	 * @return	string
 	 */
 	public function getCommandName()
@@ -127,6 +181,16 @@ class Input
 		{
 			return $this->commandOptions[$optionName];
 		}
+	}
+
+	/**
+	 * @param	int		$index
+	 * @param	string	$name
+	 * @return	void
+	 */
+	public function nameCommandArgument( int $index, string $name )
+	{
+		$this->commandArgumentNames[$name] = $index;
 	}
 
 	/**
