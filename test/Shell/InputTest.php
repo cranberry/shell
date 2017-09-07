@@ -221,6 +221,74 @@ class InputTest extends TestCase
 	}
 
 	/**
+	 * @expectedException	OutOfBoundsException
+	 */
+	public function testGetUnknownOptionThrowsException()
+	{
+		$input = new Input( ['cranberry', 'hello'] );
+
+		$optionName = 'option-' . time();
+		$input->getOption( $optionName );
+	}
+
+	/**
+	 * @dataProvider	optionProvider
+	 */
+	public function testGetOptionWithMatchingApplicationOption( $argument, $optionName, $expectedValue )
+	{
+		$input = new Input( ['cranberry', $argument, 'hello'] );
+
+		$this->assertSame( $expectedValue, $input->getOption( $optionName ) );
+	}
+
+	/**
+	 * @dataProvider	optionProvider
+	 */
+	public function testGetOptionWithMatchingCommandOption( $argument, $optionName, $expectedValue )
+	{
+		$input = new Input( ['cranberry', 'hello', $argument] );
+
+		$this->assertSame( $expectedValue, $input->getOption( $optionName ) );
+	}
+
+	public function testGetOptionWithMatchingApplicationAndCommandOptionsReturnsCommandOptionValue()
+	{
+		$applicationOptionValue = 'bar';
+		$commandOptionValue = 'baz';
+
+		$input = new Input( ['cranberry', "--foo={$applicationOptionValue}", 'hello', "--foo={$commandOptionValue}"] );
+
+		$this->assertSame( $commandOptionValue, $input->getOption( 'foo' ) );
+	}
+
+	/**
+	 * @dataProvider	optionProvider
+	 */
+	public function testHasOptionWithNoMatchesReturnsFalse( $argument, $optionName )
+	{
+		$input = new Input( ['cranberry', 'hello'] );
+		$this->assertFalse( $input->hasOption( $optionName ) );
+	}
+
+	/**
+	 * @dataProvider	optionProvider
+	 */
+	public function testHasOptionWithMatchingApplicationOptionReturnsTrue( $argument, $optionName )
+	{
+		$input = new Input( ['cranberry', $argument, 'hello'] );
+		$this->assertTrue( $input->hasOption( $optionName ) );
+	}
+
+	/**
+	 * @dataProvider	optionProvider
+	 */
+	public function testHasOptionWithMatchingCommandOptionReturnsTrue( $argument, $optionName )
+	{
+		$input = new Input( ['cranberry', 'hello', $argument] );
+		$this->assertTrue( $input->hasOption( $optionName ) );
+	}
+
+	/**
 	 * @dataProvider	optionProvider
 	 */
 	public function testHasMatchingApplicationOptionReturnsTrue( $argument, $optionName )

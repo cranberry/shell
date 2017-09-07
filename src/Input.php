@@ -196,6 +196,28 @@ class Input
 	}
 
 	/**
+	 * Get value of $optionName as either command or application option. Prefers
+	 * value of command option over application option if both exist.
+	 *
+	 * @param	string	$optionName
+	 * @return	mixed
+	 */
+	public function getOption( string $optionName )
+	{
+		/* Command option value is preferred over application */
+		if( $this->hasCommandOption( $optionName ) )
+		{
+			return $this->getCommandOption( $optionName );
+		}
+		if( $this->hasApplicationOption( $optionName ) )
+		{
+			return $this->getApplicationOption( $optionName );
+		}
+
+		throw new \OutOfBoundsException( "Option '{$optionName}' not found" );
+	}
+
+	/**
 	 * @param	string	$optionName
 	 * @return	boolean
 	 */
@@ -211,6 +233,21 @@ class Input
 	public function hasCommandOption( string $optionName ) : bool
 	{
 		return isset( $this->commandOptions[$optionName] );
+	}
+
+	/**
+	 * Evaluate existence of $optionName as either application or command option
+	 *
+	 * @param	string	$optionName
+	 * @return	boolean
+	 */
+	public function hasOption( string $optionName ) : bool
+	{
+		$hasOption = false;
+		$hasOption = $hasOption || $this->hasApplicationOption( $optionName );
+		$hasOption = $hasOption || $this->hasCommandOption( $optionName );
+
+		return $hasOption;
 	}
 
 	/**
