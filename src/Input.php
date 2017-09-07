@@ -196,6 +196,24 @@ class Input
 	}
 
 	/**
+	 * @param	string	$optionName
+	 * @return	boolean
+	 */
+	public function hasApplicationOption( string $optionName ) : bool
+	{
+		return isset( $this->applicationOptions[$optionName] );
+	}
+
+	/**
+	 * @param	string	$optionName
+	 * @return	boolean
+	 */
+	public function hasCommandOption( string $optionName ) : bool
+	{
+		return isset( $this->commandOptions[$optionName] );
+	}
+
+	/**
 	 * @param	int		$index
 	 * @param	string	$name
 	 * @return	void

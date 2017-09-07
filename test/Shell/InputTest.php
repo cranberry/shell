@@ -221,6 +221,42 @@ class InputTest extends TestCase
 	}
 
 	/**
+	 * @dataProvider	optionProvider
+	 */
+	public function testHasMatchingApplicationOptionReturnsTrue( $argument, $optionName )
+	{
+		$input = new Input( ['cranberry', $argument, 'hello'] );
+		$this->assertTrue( $input->hasApplicationOption( $optionName ) );
+	}
+
+	/**
+	 * @dataProvider	optionProvider
+	 */
+	public function testHasMatchingCommandOptionReturnsTrue( $argument, $optionName )
+	{
+		$input = new Input( ['cranberry', 'hello', $argument] );
+		$this->assertTrue( $input->hasCommandOption( $optionName ) );
+	}
+
+	/**
+	 * @dataProvider	optionProvider
+	 */
+	public function testHasUnknownApplicationOptionReturnsFalse( $argument, $optionName )
+	{
+		$input = new Input( ['cranberry', 'hello'] );
+		$this->assertFalse( $input->hasApplicationOption( $optionName ) );
+	}
+
+	/**
+	 * @dataProvider	optionProvider
+	 */
+	public function testHasUnknownCommandOptionReturnsFalse( $argument, $optionName )
+	{
+		$input = new Input( ['cranberry', 'hello'] );
+		$this->assertFalse( $input->hasCommandOption( $optionName ) );
+	}
+
+	/**
 	 * Parsing an option string which does not match `-a`, `-abc`, `--foo`, or
 	 * `--foo=bar should throw an exception
 	 *
