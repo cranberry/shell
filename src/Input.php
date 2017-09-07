@@ -175,7 +175,7 @@ class Input
 
 	/**
 	 * @param	string	$optionName
-	 * @return	mixed|null
+	 * @return	mixed
 	 */
 	public function getCommandOption( string $optionName )
 	{
