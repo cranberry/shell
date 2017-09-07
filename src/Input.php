@@ -98,7 +98,7 @@ class Input
 	 * @param	string	$optionName
 	 * @return	mixed
 	 */
-	public function getApplicationOption( $optionName )
+	public function getApplicationOption( string $optionName )
 	{
 		if( !isset( $this->applicationOptions[$optionName] ) )
 		{
@@ -154,7 +154,7 @@ class Input
 	 * @param	string	$name
 	 * @return	string
 	 */
-	public function getCommandArgumentByName( $name ) : string
+	public function getCommandArgumentByName( string $name ) : string
 	{
 		if( !isset( $this->commandArgumentNames[$name] ) )
 		{
@@ -177,7 +177,7 @@ class Input
 	 * @param	string	$optionName
 	 * @return	mixed|null
 	 */
-	public function getCommandOption( $optionName )
+	public function getCommandOption( string $optionName )
 	{
 		if( !isset( $this->commandOptions[$optionName] ) )
 		{
