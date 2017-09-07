@@ -100,10 +100,12 @@ class Input
 	 */
 	public function getApplicationOption( $optionName )
 	{
-		if( isset( $this->applicationOptions[$optionName] ) )
+		if( !isset( $this->applicationOptions[$optionName] ) )
 		{
-			return $this->applicationOptions[$optionName];
+			throw new \OutOfBoundsException( "Application option '{$optionName}' not found" );
 		}
+
+		return $this->applicationOptions[$optionName];
 	}
 
 	/**
@@ -177,10 +179,12 @@ class Input
 	 */
 	public function getCommandOption( $optionName )
 	{
-		if( isset( $this->commandOptions[$optionName] ) )
+		if( !isset( $this->commandOptions[$optionName] ) )
 		{
-			return $this->commandOptions[$optionName];
+			throw new \OutOfBoundsException( "Command option '{$optionName}' not found" );
 		}
+
+		return $this->commandOptions[$optionName];
 	}
 
 	/**

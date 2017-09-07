@@ -198,11 +198,26 @@ class InputTest extends TestCase
 		$this->assertSame( $who, $input->getCommandArgumentByName( $commandArgumentName ) );
 	}
 
-	public function testGetUnknownApplicationOptionReturnsNull()
+	/**
+	 * @expectedException	OutOfBoundsException
+	 */
+	public function testGetUnknownApplicationOptionThrowsException()
 	{
-		$input = new Input( ['salso'] );
+		$input = new Input( ['cranberry', 'hello'] );
 
-		$this->assertSame( null, $input->getApplicationOption( 'foo' ) );
+		$optionName = 'option-' . time();
+		$input->getApplicationOption( $optionName );
+	}
+
+	/**
+	 * @expectedException	OutOfBoundsException
+	 */
+	public function testGetUnknownCommandOptionThrowsException()
+	{
+		$input = new Input( ['cranberry', 'hello'] );
+
+		$optionName = 'option-' . time();
+		$input->getCommandOption( $optionName );
 	}
 
 	/**
