@@ -1,5 +1,5 @@
 {
-    "name": "cranberry/cli",
+    "name": "cranberry/shell",
 	"description": "A small CLI application library.",
 	"homepage": "https://github.com/cranberry/shell",
     "type": "library",
