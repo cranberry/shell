@@ -33,6 +33,11 @@ class Input implements InputInterface
 	protected $commandOptions=[];
 
 	/**
+	 * @var	array
+	 */
+	protected $env=[];
+
+	/**
 	 * @param	array	$arguments	Array of arguments; like $argv
 	 * @param	array	$env		Array of environment variables; like getenv()
 	 * @return	void
@@ -93,6 +98,9 @@ class Input implements InputInterface
 			}
 		}
 		while( $argument !== false );
+
+		/* Environment Variables */
+		$this->env = $env;
 	}
 
 	/**
@@ -197,6 +205,20 @@ class Input implements InputInterface
 	}
 
 	/**
+	 * @param	string	$envName
+	 * @return	string
+	 */
+	public function getEnv( string $envName ) : string
+	{
+		if( !isset( $this->env[$envName] ) )
+		{
+			throw new \OutOfBoundsException( "Environment variable '{$envName}' not found" );
+		}
+
+		return $this->env[$envName];
+	}
+
+	/**
 	 * Get value of $optionName as either command or application option. Prefers
 	 * value of command option over application option if both exist.
 	 *
@@ -234,6 +256,15 @@ class Input implements InputInterface
 	public function hasCommandOption( string $optionName ) : bool
 	{
 		return isset( $this->commandOptions[$optionName] );
+	}
+
+	/**
+	 * @param	string	$envName
+	 * @return	boolean
+	 */
+	public function hasEnv( string $envName ) : bool
+	{
+		return isset( $this->env[$envName] );
 	}
 
 	/**

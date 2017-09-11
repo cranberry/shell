@@ -154,6 +154,16 @@ class InputTest extends TestCase
 		$this->assertEquals( $commandName, $input->getCommand() );
 	}
 
+	public function testGetEnv()
+	{
+		$envName = 'FOO_' . time();
+		$envValue = (string)microtime( true );
+
+		$input = new Input( ['cranberry'], [$envName => $envValue] );
+
+		$this->assertSame( $envValue, $input->getEnv( $envName ) );
+	}
+
 	/**
 	 * @expectedException	OutOfBoundsException
 	 */
@@ -223,6 +233,17 @@ class InputTest extends TestCase
 	/**
 	 * @expectedException	OutOfBoundsException
 	 */
+	public function testGetUnknownEnvThrowsException()
+	{
+		$envName = 'FOO_' . time();
+		$input = new Input( ['cranberry'], [] );
+
+		$input->getEnv( $envName );
+	}
+
+	/**
+	 * @expectedException	OutOfBoundsException
+	 */
 	public function testGetUnknownOptionThrowsException()
 	{
 		$input = new Input( ['cranberry', 'hello'], [] );
@@ -259,6 +280,22 @@ class InputTest extends TestCase
 		$input = new Input( ['cranberry', "--foo={$applicationOptionValue}", 'hello', "--foo={$commandOptionValue}"], [] );
 
 		$this->assertSame( $commandOptionValue, $input->getOption( 'foo' ) );
+	}
+
+	public function testHasEnvWithNoMatchesReturnsFalse()
+	{
+		$envName = 'FOO_' . time();
+		$input = new Input( ['cranberry'], [] );
+
+		$this->assertFalse( $input->hasEnv( $envName ) );
+	}
+
+	public function testHasEnvWithMatchReturnsTrue()
+	{
+		$envName = 'FOO_' . time();
+		$input = new Input( ['cranberry'], [$envName => microtime()] );
+
+		$this->assertTrue( $input->hasEnv( $envName ) );
 	}
 
 	/**
