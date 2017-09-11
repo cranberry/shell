@@ -15,12 +15,12 @@ class Input implements InputInterface
 	/**
 	 * @var	array
 	 */
-	protected $commandArgumentNames=[];
+	protected $argumentNames=[];
 
 	/**
 	 * @var	array
 	 */
-	protected $commandArguments=[];
+	protected $arguments=[];
 
 	/**
 	 * @var	string
@@ -89,7 +89,7 @@ class Input implements InputInterface
 			/* Process command argument */
 			catch( \InvalidArgumentException $e )
 			{
-				$this->registerCommandArgument( $argument );
+				$this->registerArgument( $argument );
 			}
 		}
 		while( $argument !== false );
@@ -117,12 +117,12 @@ class Input implements InputInterface
 	{
 		if( is_string( $key ) )
 		{
-			return $this->getCommandArgumentByName( $key );
+			return $this->getArgumentByName( $key );
 		}
 
 		if( is_int( $key ) )
 		{
-			return $this->getCommandArgumentByIndex( $key );
+			return $this->getArgumentByIndex( $key );
 		}
 
 		$exceptionMessage = sprintf( 'Argument 1 passed to %s() must be of the type string or int, %s passed', __METHOD__, gettype( $key ) );
@@ -130,40 +130,40 @@ class Input implements InputInterface
 	}
 
 	/**
-	 * @return	array
-	 */
-	public function getCommandArguments() : array
-	{
-		return $this->commandArguments;
-	}
-
-	/**
 	 * @param	int		$index
 	 * @return	string
 	 */
-	public function getCommandArgumentByIndex( int $index ) : string
+	public function getArgumentByIndex( int $index ) : string
 	{
-		if( !isset( $this->commandArguments[$index] ) )
+		if( !isset( $this->arguments[$index] ) )
 		{
 			throw new \OutOfBoundsException( "Invalid command argument index '{$index}'" );
 		}
 
-		return $this->commandArguments[$index];
+		return $this->arguments[$index];
 	}
 
 	/**
 	 * @param	string	$name
 	 * @return	string
 	 */
-	public function getCommandArgumentByName( string $name ) : string
+	public function getArgumentByName( string $name ) : string
 	{
-		if( !isset( $this->commandArgumentNames[$name] ) )
+		if( !isset( $this->argumentNames[$name] ) )
 		{
 			throw new \OutOfBoundsException( "Invalid named argument '{$name}'" );
 		}
 
-		$index = $this->commandArgumentNames[$name];
-		return $this->getCommandArgumentByIndex( $index );
+		$index = $this->argumentNames[$name];
+		return $this->getArgumentByIndex( $index );
+	}
+
+	/**
+	 * @return	array
+	 */
+	public function getArguments() : array
+	{
+		return $this->arguments;
 	}
 
 	/**
@@ -256,9 +256,9 @@ class Input implements InputInterface
 	 * @param	string	$name
 	 * @return	void
 	 */
-	public function nameCommandArgument( int $index, string $name )
+	public function nameArgument( int $index, string $name )
 	{
-		$this->commandArgumentNames[$name] = $index;
+		$this->argumentNames[$name] = $index;
 	}
 
 	/**
@@ -351,14 +351,14 @@ class Input implements InputInterface
 	 * @param	string	$argument
 	 * @return	void
 	 */
-	public function registerCommandArgument( string $argument )
+	public function registerArgument( string $argument )
 	{
 		if( strlen( $argument ) < 1 )
 		{
 			return;
 		}
 
-		$this->commandArguments[] = $argument;
+		$this->arguments[] = $argument;
 	}
 
 	/**

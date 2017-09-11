@@ -67,7 +67,7 @@ class InputTest extends TestCase
 		$arguments = ['salso', 'command', '--foo', $commandArgument];
 		$input = new Input( $arguments, [] );
 
-		$commandArguments = $input->getCommandArguments();
+		$commandArguments = $input->getArguments();
 
 		$this->assertTrue( is_array( $commandArguments ) );
 		$this->assertTrue( in_array( $commandArgument, $commandArguments ) );
@@ -78,8 +78,8 @@ class InputTest extends TestCase
 		$commandArgument = '';
 		$input = new Input( ['salso'], [] );
 
-		$input->registerCommandArgument( $commandArgument );
-		$commandArguments = $input->getCommandArguments();
+		$input->registerArgument( $commandArgument );
+		$commandArguments = $input->getArguments();
 
 		$this->assertTrue( is_array( $commandArguments ) );
 		$this->assertEquals( 0, count( $commandArguments ) );
@@ -98,23 +98,23 @@ class InputTest extends TestCase
 		$who = 'Dolly';
 		$input = new Input( ['cranberry', 'hello', $who], [] );
 
-		$this->assertSame( $who, $input->getCommandArgumentByIndex(0) );
+		$this->assertSame( $who, $input->getArgumentByIndex(0) );
 	}
 
 	public function testGetCommandArgumentWithIntParameterReturnsByIndex()
 	{
 		$input = new Input( ['cranberry', 'hello', 'Dolly'], [] );
 
-		$this->assertSame( $input->getCommandArgumentByIndex( 0 ), $input->getArgument( 0 ) );
+		$this->assertSame( $input->getArgumentByIndex( 0 ), $input->getArgument( 0 ) );
 	}
 
 	public function testGetCommandArgumentWithStringParameterReturnsByName()
 	{
 		$input = new Input( ['cranberry', 'hello', 'Dolly'], [] );
 
-		$input->nameCommandArgument( 0, 'who' );
+		$input->nameArgument( 0, 'who' );
 
-		$this->assertSame( $input->getCommandArgumentByName( 'who' ), $input->getArgument( 'who' ) );
+		$this->assertSame( $input->getArgumentByName( 'who' ), $input->getArgument( 'who' ) );
 	}
 
 	/**
@@ -142,7 +142,7 @@ class InputTest extends TestCase
 		$arguments = ['salso', '--foo=bar', $commandName];
 		$input = new Input( $arguments, [] );
 
-		$this->assertEquals( $commandName, $input->getCommandName() );
+		$this->assertEquals( $commandName, $input->getCommand() );
 	}
 
 	public function testGetCommandWithCommandOptions()
@@ -151,7 +151,7 @@ class InputTest extends TestCase
 		$arguments = ['salso', $commandName, '--foo=bar'];
 		$input = new Input( $arguments, [] );
 
-		$this->assertEquals( $commandName, $input->getCommandName() );
+		$this->assertEquals( $commandName, $input->getCommand() );
 	}
 
 	/**
@@ -160,7 +160,7 @@ class InputTest extends TestCase
 	public function testGetInvalidCommandArgumentIndexThrowsException()
 	{
 		$input = new Input( ['cranberry', 'hello'], [] );
-		$input->getCommandArgumentByIndex(0);
+		$input->getArgumentByIndex(0);
 	}
 
 	/**
@@ -171,8 +171,8 @@ class InputTest extends TestCase
 		$input = new Input( ['cranberry', 'hello'], [] );
 
 		$commandArgumentName = 'who';
-		$input->nameCommandArgument( 0, $commandArgumentName );
-		$input->getCommandArgumentByName( $commandArgumentName );
+		$input->nameArgument( 0, $commandArgumentName );
+		$input->getArgumentByName( $commandArgumentName );
 	}
 
 	/**
@@ -183,7 +183,7 @@ class InputTest extends TestCase
 		$input = new Input( ['cranberry', 'hello'], [] );
 
 		$commandArgumentName = 'who';
-		$input->getCommandArgumentByName( $commandArgumentName );
+		$input->getArgumentByName( $commandArgumentName );
 	}
 
 	public function testNameCommandArgument()
@@ -192,10 +192,10 @@ class InputTest extends TestCase
 		$input = new Input( ['cranberry', 'hello', $who], [] );
 
 		$commandArgumentName = 'who';
-		$input->nameCommandArgument( 0, $commandArgumentName );
+		$input->nameArgument( 0, $commandArgumentName );
 
-		$this->assertSame( $who, $input->getCommandArgumentByIndex( 0 ) );
-		$this->assertSame( $who, $input->getCommandArgumentByName( $commandArgumentName ) );
+		$this->assertSame( $who, $input->getArgumentByIndex( 0 ) );
+		$this->assertSame( $who, $input->getArgumentByName( $commandArgumentName ) );
 	}
 
 	/**
@@ -370,8 +370,8 @@ class InputTest extends TestCase
 		$commandArgument = '/path/';
 		$input = new Input( ['salso'], [] );
 
-		$input->registerCommandArgument( $commandArgument );
-		$commandArguments = $input->getCommandArguments();
+		$input->registerArgument( $commandArgument );
+		$commandArguments = $input->getArguments();
 
 		$this->assertTrue( is_array( $commandArguments ) );
 		$this->assertTrue( in_array( $commandArgument, $commandArguments ) );
