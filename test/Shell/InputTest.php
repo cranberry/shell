@@ -282,6 +282,18 @@ class InputTest extends TestCase
 		$this->assertSame( $commandOptionValue, $input->getOption( 'foo' ) );
 	}
 
+	public function testHasCommandWithoutMatchReturnsFalse()
+	{
+		$input = new Input( ['cranberry'], [] );
+		$this->assertFalse( $input->hasCommand() );
+	}
+
+	public function testHasCommandWithMatchReturnsTrue()
+	{
+		$input = new Input( ['cranberry', 'hello'], [] );
+		$this->assertTrue( $input->hasCommand() );
+	}
+
 	public function testHasEnvWithNoMatchesReturnsFalse()
 	{
 		$envName = 'FOO_' . time();

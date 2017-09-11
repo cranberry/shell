@@ -250,6 +250,14 @@ class Input implements InputInterface
 	}
 
 	/**
+	 * @return	boolean
+	 */
+	public function hasCommand() : bool
+	{
+		return $this->commandName !== null;
+	}
+
+	/**
 	 * @param	string	$optionName
 	 * @return	boolean
 	 */
