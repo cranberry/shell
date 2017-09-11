@@ -211,6 +211,15 @@ class InputTest extends TestCase
 	/**
 	 * @expectedException	OutOfBoundsException
 	 */
+	public function testGetUndefinedCommandThrowsException()
+	{
+		$input = new Input( ['cranberry'], [] );
+		$input->getCommand();
+	}
+
+	/**
+	 * @expectedException	OutOfBoundsException
+	 */
 	public function testGetUnknownApplicationOptionThrowsException()
 	{
 		$input = new Input( ['cranberry', 'hello'], [] );

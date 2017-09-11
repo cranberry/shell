@@ -23,7 +23,7 @@ interface InputInterface
 	/**
 	 * @return	string
 	 */
-	public function getCommand();
+	public function getCommand() : string;
 
 	/**
 	 * @param	string	$envName

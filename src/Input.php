@@ -177,8 +177,13 @@ class Input implements InputInterface
 	/**
 	 * @return	string
 	 */
-	public function getCommand()
+	public function getCommand() : string
 	{
+		if( $this->commandName === null )
+		{
+			throw new \OutOfBoundsException( "Command name not defined" );
+		}
+
 		return $this->commandName;
 	}
 
