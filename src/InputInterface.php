@@ -38,11 +38,6 @@ interface InputInterface
 	public function getOption( string $optionName );
 
 	/**
-	 * @return	string
-	 */
-	public function getSubCommand();
-
-	/**
 	 * @param	int|string	$argumentIndex
 	 * @return	boolean
 	 */
@@ -64,9 +59,4 @@ interface InputInterface
 	 * @return	boolean
 	 */
 	public function hasOption( string $optionName ) : bool;
-
-	/**
-	 * @return	boolean
-	 */
-	public function hasSubCommand() : bool;
 }
