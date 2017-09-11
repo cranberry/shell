@@ -169,7 +169,7 @@ class Input implements InputInterface
 	/**
 	 * @return	string
 	 */
-	public function getCommandName()
+	public function getCommand()
 	{
 		return $this->commandName;
 	}
