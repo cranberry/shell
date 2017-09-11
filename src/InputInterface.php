@@ -15,10 +15,10 @@ interface InputInterface
 	public function __construct( array $arguments, array $env );
 
 	/**
-	 * @param	int|string	$argumentIndex
+	 * @param	int|string	$key
 	 * @return	string
 	 */
-	public function getArgument( $argumentIndex ) : string;
+	public function getArgument( $key ) : string;
 
 	/**
 	 * @return	string
@@ -38,10 +38,10 @@ interface InputInterface
 	public function getOption( string $optionName );
 
 	/**
-	 * @param	int|string	$argumentIndex
+	 * @param	int|string	$key
 	 * @return	boolean
 	 */
-	public function hasArgument( $argumentIndex ) : bool;
+	public function hasArgument( $key ) : bool;
 
 	/**
 	 * @return	boolean
