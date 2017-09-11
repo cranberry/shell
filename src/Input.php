@@ -5,7 +5,7 @@
  */
 namespace Cranberry\Shell;
 
-class Input
+class Input implements InputInterface
 {
 	/**
 	 * @var	array
@@ -34,9 +34,10 @@ class Input
 
 	/**
 	 * @param	array	$arguments	Array of arguments; like $argv
+	 * @param	array	$env		Array of environment variables; like getenv()
 	 * @return	void
 	 */
-	public function __construct( array $arguments )
+	public function __construct( array $arguments, array $env )
 	{
 		if( count( $arguments ) == 0 )
 		{

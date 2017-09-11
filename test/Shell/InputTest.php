@@ -33,7 +33,7 @@ class InputTest extends TestCase
 	public function testConstructorRegistersApplicationOptions( $argument, $optionName, $expectedValue )
 	{
 		$arguments = ['salso', $argument];
-		$input = new Input( $arguments );
+		$input = new Input( $arguments, [] );
 
 		$this->assertSame( $expectedValue, $input->getApplicationOption( $optionName ) );
 	}
@@ -44,7 +44,7 @@ class InputTest extends TestCase
 	public function testConstructorRegistersCommandOptions( $argument, $optionName, $expectedValue )
 	{
 		$arguments = ['salso', 'command', $argument];
-		$input = new Input( $arguments );
+		$input = new Input( $arguments, [] );
 
 		$this->assertSame( $expectedValue, $input->getCommandOption( $optionName ) );
 	}
@@ -52,7 +52,7 @@ class InputTest extends TestCase
 	public function testConstructorRegistersCommandOptionsWithNonDeterminantOrder()
 	{
 		$arguments = ['salso', 'command', '--foo', '/path/', '-abc', '--bar'];
-		$input = new Input( $arguments );
+		$input = new Input( $arguments, [] );
 
 		$this->assertSame( true, $input->getCommandOption( 'foo' ) );
 		$this->assertSame( true, $input->getCommandOption( 'a' ) );
@@ -65,7 +65,7 @@ class InputTest extends TestCase
 	{
 		$commandArgument = '/path/';
 		$arguments = ['salso', 'command', '--foo', $commandArgument];
-		$input = new Input( $arguments );
+		$input = new Input( $arguments, [] );
 
 		$commandArguments = $input->getCommandArguments();
 
@@ -76,7 +76,7 @@ class InputTest extends TestCase
 	public function testEmptyCommandArgumentNotRegistered()
 	{
 		$commandArgument = '';
-		$input = new Input( ['salso'] );
+		$input = new Input( ['salso'], [] );
 
 		$input->registerCommandArgument( $commandArgument );
 		$commandArguments = $input->getCommandArguments();
@@ -90,27 +90,27 @@ class InputTest extends TestCase
 	 */
 	public function testEmptyArgumentsArrayThrowsLengthException()
 	{
-		$input = new Input( [] );
+		$input = new Input( [], [] );
 	}
 
 	public function testGetCommandArgumentByIndex()
 	{
 		$who = 'Dolly';
-		$input = new Input( ['cranberry', 'hello', $who] );
+		$input = new Input( ['cranberry', 'hello', $who], [] );
 
 		$this->assertSame( $who, $input->getCommandArgumentByIndex(0) );
 	}
 
 	public function testGetCommandArgumentWithIntParameterReturnsByIndex()
 	{
-		$input = new Input( ['cranberry', 'hello', 'Dolly'] );
+		$input = new Input( ['cranberry', 'hello', 'Dolly'], [] );
 
 		$this->assertSame( $input->getCommandArgumentByIndex( 0 ), $input->getCommandArgument( 0 ) );
 	}
 
 	public function testGetCommandArgumentWithStringParameterReturnsByName()
 	{
-		$input = new Input( ['cranberry', 'hello', 'Dolly'] );
+		$input = new Input( ['cranberry', 'hello', 'Dolly'], [] );
 
 		$input->nameCommandArgument( 0, 'who' );
 
@@ -122,7 +122,7 @@ class InputTest extends TestCase
 	 */
 	public function testGetCommandArgumentWithUnsupportedParameterTypeThrowsException()
 	{
-		$input = new Input( ['cranberry', 'hello', 'Dolly'] );
+		$input = new Input( ['cranberry', 'hello', 'Dolly'], [] );
 
 		$input->getCommandArgument( false );
 	}
@@ -130,7 +130,7 @@ class InputTest extends TestCase
 	public function testGetCommandOptionsReturnsArray()
 	{
 		$appName = time();
-		$input = new Input( [$appName] );
+		$input = new Input( [$appName], [] );
 
 		$commandOptions = $input->getCommandOptions();
 		$this->assertSame( [], $commandOptions );
@@ -140,7 +140,7 @@ class InputTest extends TestCase
 	{
 		$commandName = 'command-' . time();
 		$arguments = ['salso', '--foo=bar', $commandName];
-		$input = new Input( $arguments );
+		$input = new Input( $arguments, [] );
 
 		$this->assertEquals( $commandName, $input->getCommandName() );
 	}
@@ -149,7 +149,7 @@ class InputTest extends TestCase
 	{
 		$commandName = 'command-' . time();
 		$arguments = ['salso', $commandName, '--foo=bar'];
-		$input = new Input( $arguments );
+		$input = new Input( $arguments, [] );
 
 		$this->assertEquals( $commandName, $input->getCommandName() );
 	}
@@ -159,7 +159,7 @@ class InputTest extends TestCase
 	 */
 	public function testGetInvalidCommandArgumentIndexThrowsException()
 	{
-		$input = new Input( ['cranberry', 'hello'] );
+		$input = new Input( ['cranberry', 'hello'], [] );
 		$input->getCommandArgumentByIndex(0);
 	}
 
@@ -168,7 +168,7 @@ class InputTest extends TestCase
 	 */
 	public function testGetInvalidCommandArgumentByNameThrowsException()
 	{
-		$input = new Input( ['cranberry', 'hello'] );
+		$input = new Input( ['cranberry', 'hello'], [] );
 
 		$commandArgumentName = 'who';
 		$input->nameCommandArgument( 0, $commandArgumentName );
@@ -180,7 +180,7 @@ class InputTest extends TestCase
 	 */
 	public function testGetUnnamedCommandArgumentByNameThrowsException()
 	{
-		$input = new Input( ['cranberry', 'hello'] );
+		$input = new Input( ['cranberry', 'hello'], [] );
 
 		$commandArgumentName = 'who';
 		$input->getCommandArgumentByName( $commandArgumentName );
@@ -189,7 +189,7 @@ class InputTest extends TestCase
 	public function testNameCommandArgument()
 	{
 		$who = 'Dolly';
-		$input = new Input( ['cranberry', 'hello', $who] );
+		$input = new Input( ['cranberry', 'hello', $who], [] );
 
 		$commandArgumentName = 'who';
 		$input->nameCommandArgument( 0, $commandArgumentName );
@@ -203,7 +203,7 @@ class InputTest extends TestCase
 	 */
 	public function testGetUnknownApplicationOptionThrowsException()
 	{
-		$input = new Input( ['cranberry', 'hello'] );
+		$input = new Input( ['cranberry', 'hello'], [] );
 
 		$optionName = 'option-' . time();
 		$input->getApplicationOption( $optionName );
@@ -214,7 +214,7 @@ class InputTest extends TestCase
 	 */
 	public function testGetUnknownCommandOptionThrowsException()
 	{
-		$input = new Input( ['cranberry', 'hello'] );
+		$input = new Input( ['cranberry', 'hello'], [] );
 
 		$optionName = 'option-' . time();
 		$input->getCommandOption( $optionName );
@@ -225,7 +225,7 @@ class InputTest extends TestCase
 	 */
 	public function testGetUnknownOptionThrowsException()
 	{
-		$input = new Input( ['cranberry', 'hello'] );
+		$input = new Input( ['cranberry', 'hello'], [] );
 
 		$optionName = 'option-' . time();
 		$input->getOption( $optionName );
@@ -236,7 +236,7 @@ class InputTest extends TestCase
 	 */
 	public function testGetOptionWithMatchingApplicationOption( $argument, $optionName, $expectedValue )
 	{
-		$input = new Input( ['cranberry', $argument, 'hello'] );
+		$input = new Input( ['cranberry', $argument, 'hello'], [] );
 
 		$this->assertSame( $expectedValue, $input->getOption( $optionName ) );
 	}
@@ -246,7 +246,7 @@ class InputTest extends TestCase
 	 */
 	public function testGetOptionWithMatchingCommandOption( $argument, $optionName, $expectedValue )
 	{
-		$input = new Input( ['cranberry', 'hello', $argument] );
+		$input = new Input( ['cranberry', 'hello', $argument], [] );
 
 		$this->assertSame( $expectedValue, $input->getOption( $optionName ) );
 	}
@@ -256,7 +256,7 @@ class InputTest extends TestCase
 		$applicationOptionValue = 'bar';
 		$commandOptionValue = 'baz';
 
-		$input = new Input( ['cranberry', "--foo={$applicationOptionValue}", 'hello', "--foo={$commandOptionValue}"] );
+		$input = new Input( ['cranberry', "--foo={$applicationOptionValue}", 'hello', "--foo={$commandOptionValue}"], [] );
 
 		$this->assertSame( $commandOptionValue, $input->getOption( 'foo' ) );
 	}
@@ -266,7 +266,7 @@ class InputTest extends TestCase
 	 */
 	public function testHasOptionWithNoMatchesReturnsFalse( $argument, $optionName )
 	{
-		$input = new Input( ['cranberry', 'hello'] );
+		$input = new Input( ['cranberry', 'hello'], [] );
 		$this->assertFalse( $input->hasOption( $optionName ) );
 	}
 
@@ -275,7 +275,7 @@ class InputTest extends TestCase
 	 */
 	public function testHasOptionWithMatchingApplicationOptionReturnsTrue( $argument, $optionName )
 	{
-		$input = new Input( ['cranberry', $argument, 'hello'] );
+		$input = new Input( ['cranberry', $argument, 'hello'], [] );
 		$this->assertTrue( $input->hasOption( $optionName ) );
 	}
 
@@ -284,7 +284,7 @@ class InputTest extends TestCase
 	 */
 	public function testHasOptionWithMatchingCommandOptionReturnsTrue( $argument, $optionName )
 	{
-		$input = new Input( ['cranberry', 'hello', $argument] );
+		$input = new Input( ['cranberry', 'hello', $argument], [] );
 		$this->assertTrue( $input->hasOption( $optionName ) );
 	}
 
@@ -293,7 +293,7 @@ class InputTest extends TestCase
 	 */
 	public function testHasMatchingApplicationOptionReturnsTrue( $argument, $optionName )
 	{
-		$input = new Input( ['cranberry', $argument, 'hello'] );
+		$input = new Input( ['cranberry', $argument, 'hello'], [] );
 		$this->assertTrue( $input->hasApplicationOption( $optionName ) );
 	}
 
@@ -302,7 +302,7 @@ class InputTest extends TestCase
 	 */
 	public function testHasMatchingCommandOptionReturnsTrue( $argument, $optionName )
 	{
-		$input = new Input( ['cranberry', 'hello', $argument] );
+		$input = new Input( ['cranberry', 'hello', $argument], [] );
 		$this->assertTrue( $input->hasCommandOption( $optionName ) );
 	}
 
@@ -311,7 +311,7 @@ class InputTest extends TestCase
 	 */
 	public function testHasUnknownApplicationOptionReturnsFalse( $argument, $optionName )
 	{
-		$input = new Input( ['cranberry', 'hello'] );
+		$input = new Input( ['cranberry', 'hello'], [] );
 		$this->assertFalse( $input->hasApplicationOption( $optionName ) );
 	}
 
@@ -320,7 +320,7 @@ class InputTest extends TestCase
 	 */
 	public function testHasUnknownCommandOptionReturnsFalse( $argument, $optionName )
 	{
-		$input = new Input( ['cranberry', 'hello'] );
+		$input = new Input( ['cranberry', 'hello'], [] );
 		$this->assertFalse( $input->hasCommandOption( $optionName ) );
 	}
 
@@ -354,7 +354,7 @@ class InputTest extends TestCase
 	 */
 	public function testRegisterApplicationOption( $argument, $optionName, $expectedValue )
 	{
-		$input = new Input( ['salso'] );
+		$input = new Input( ['salso'], [] );
 
 		$result = Input::parseOptionString( $argument );
 		foreach( $result as $optionName => $optionValue )
@@ -368,7 +368,7 @@ class InputTest extends TestCase
 	public function testRegisterCommandArgument()
 	{
 		$commandArgument = '/path/';
-		$input = new Input( ['salso'] );
+		$input = new Input( ['salso'], [] );
 
 		$input->registerCommandArgument( $commandArgument );
 		$commandArguments = $input->getCommandArguments();
@@ -382,7 +382,7 @@ class InputTest extends TestCase
 	 */
 	public function testRegisterCommandOption( $argument, $optionName, $expectedValue )
 	{
-		$input = new Input( ['salso'] );
+		$input = new Input( ['salso'], [] );
 
 		$result = Input::parseOptionString( $argument );
 		foreach( $result as $optionName => $optionValue )
