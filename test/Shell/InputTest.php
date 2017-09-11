@@ -105,7 +105,7 @@ class InputTest extends TestCase
 	{
 		$input = new Input( ['cranberry', 'hello', 'Dolly'], [] );
 
-		$this->assertSame( $input->getCommandArgumentByIndex( 0 ), $input->getCommandArgument( 0 ) );
+		$this->assertSame( $input->getCommandArgumentByIndex( 0 ), $input->getArgument( 0 ) );
 	}
 
 	public function testGetCommandArgumentWithStringParameterReturnsByName()
@@ -114,7 +114,7 @@ class InputTest extends TestCase
 
 		$input->nameCommandArgument( 0, 'who' );
 
-		$this->assertSame( $input->getCommandArgumentByName( 'who' ), $input->getCommandArgument( 'who' ) );
+		$this->assertSame( $input->getCommandArgumentByName( 'who' ), $input->getArgument( 'who' ) );
 	}
 
 	/**
@@ -124,7 +124,7 @@ class InputTest extends TestCase
 	{
 		$input = new Input( ['cranberry', 'hello', 'Dolly'], [] );
 
-		$input->getCommandArgument( false );
+		$input->getArgument( false );
 	}
 
 	public function testGetCommandOptionsReturnsArray()

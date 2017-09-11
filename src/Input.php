@@ -110,31 +110,31 @@ class Input implements InputInterface
 	}
 
 	/**
+	 * @param	int|string	$key
+	 * @return	string
+	 */
+	public function getArgument( $key ) : string
+	{
+		if( is_string( $key ) )
+		{
+			return $this->getCommandArgumentByName( $key );
+		}
+
+		if( is_int( $key ) )
+		{
+			return $this->getCommandArgumentByIndex( $key );
+		}
+
+		$exceptionMessage = sprintf( 'Argument 1 passed to %s() must be of the type string or int, %s passed', __METHOD__, gettype( $key ) );
+		throw new \InvalidArgumentException( $exceptionMessage );
+	}
+
+	/**
 	 * @return	array
 	 */
 	public function getCommandArguments() : array
 	{
 		return $this->commandArguments;
-	}
-
-	/**
-	 * @param	int|string	$query
-	 * @return	string
-	 */
-	public function getCommandArgument( $query ) : string
-	{
-		if( is_string( $query ) )
-		{
-			return $this->getCommandArgumentByName( $query );
-		}
-
-		if( is_int( $query ) )
-		{
-			return $this->getCommandArgumentByIndex( $query );
-		}
-
-		$exceptionMessage = sprintf( 'Argument 1 passed to %s() must be of the type string or int, %s passed', __METHOD__, gettype( $query ) );
-		throw new \InvalidArgumentException( $exceptionMessage );
 	}
 
 	/**
