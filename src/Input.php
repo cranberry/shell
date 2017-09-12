@@ -255,6 +255,28 @@ class Input implements InputInterface
 	}
 
 	/**
+	 * @param	int|string	$key
+	 * @return	boolean
+	 */
+	public function hasArgument( $key ) : bool
+	{
+		if( is_int( $key ) )
+		{
+			return isset( $this->arguments[$key] );
+		}
+
+		if( is_string( $key ) )
+		{
+			if( isset( $this->argumentNames[$key] ) )
+			{
+				return isset( $this->arguments[$this->argumentNames[$key]] );
+			}
+
+			return false;
+		}
+	}
+
+	/**
 	 * @return	boolean
 	 */
 	public function hasCommand() : bool

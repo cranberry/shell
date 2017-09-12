@@ -291,6 +291,32 @@ class InputTest extends TestCase
 		$this->assertSame( $commandOptionValue, $input->getOption( 'foo' ) );
 	}
 
+	public function testHasArgumentWithoutMatchingIndexReturnsFalse()
+	{
+		$input = new Input( ['cranberry'], [] );
+		$this->assertFalse( $input->hasArgument(0) );
+	}
+
+	public function testHasArgumentWithoutMatchingNameReturnsFalse()
+	{
+		$input = new Input( ['cranberry'], [] );
+		$this->assertFalse( $input->hasArgument( 'foo' ) );
+	}
+
+	public function testHasArgumentWithMatchingIndexReturnsTrue()
+	{
+		$input = new Input( ['cranberry', 'command', 'bar'], [] );
+		$this->assertTrue( $input->hasArgument( 0 ) );
+	}
+
+	public function testHasArgumentWithMatchingNameReturnsFalse()
+	{
+		$input = new Input( ['cranberry', 'command', 'bar'], [] );
+		$input->nameArgument( 0, 'foo' );
+
+		$this->assertTrue( $input->hasArgument( 'foo' ) );
+	}
+
 	public function testHasCommandWithoutMatchReturnsFalse()
 	{
 		$input = new Input( ['cranberry'], [] );
