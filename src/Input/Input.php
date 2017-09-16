@@ -3,7 +3,7 @@
 /*
  * This file is part of Cranberry\Shell
  */
-namespace Cranberry\Shell;
+namespace Cranberry\Shell\Input;
 
 class Input implements InputInterface
 {
