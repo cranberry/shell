@@ -6,10 +6,34 @@
 namespace Cranberry\Shell\Middleware;
 
 use Cranberry\Shell\Input;
+use Cranberry\Shell\Output;
 use PHPUnit\Framework\TestCase;
 
 class MiddlewareTest extends TestCase
 {
+	/**
+	 * @var    string
+	 */
+	protected static $tempPathname;
+
+	public static function setUpBeforeClass()
+	{
+		self::$tempPathname = dirname( dirname( __DIR__ ) ) . '/fixtures/temp';
+		if( !file_exists( self::$tempPathname ) )
+		{
+			mkdir( self::$tempPathname, 0777, true );
+		}
+	}
+
+	public static function tearDownAfterClass()
+	{
+		if( file_exists( self::$tempPathname ) )
+		{
+			$command = sprintf( 'rm -r %s', self::$tempPathname );
+			exec( $command );
+		}
+	}
+
 	/**
 	 * @expectedException	InvalidArgumentException
 	 */
@@ -23,7 +47,7 @@ class MiddlewareTest extends TestCase
 
 	public function testBindToObject()
 	{
-		$closure = function( Input\InputInterface &$input, &$time )
+		$closure = function( Input\InputInterface &$input, Output\OutputInterface &$output, &$time )
 		{
 			$time = $this->time;
 		};
@@ -34,17 +58,18 @@ class MiddlewareTest extends TestCase
 		$boundObject->time = (string)microtime( true );
 
 		$input = new Input\Input( ['app'], [] );
+		$output = new Output\Output();
 
 		$middleware = new Middleware( $closure );
 		$middleware->bindTo( $boundObject );
-		$middleware->run( $input, $argTime );
+		$middleware->run( $input, $output, $argTime );
 
 		$this->assertSame( $boundObject->time, $argTime );
 	}
 
 	public function testGetCallback()
 	{
-		$closure = function( Input\InputInterface &$input )
+		$closure = function( Input\InputInterface &$input, Output\OutputInterface &$output )
 		{
 			$output->line( time() );
 		};
@@ -53,9 +78,35 @@ class MiddlewareTest extends TestCase
 		$this->assertSame( $closure, $middleware->getCallback() );
 	}
 
+	public function testFlushOutputBuffer()
+	{
+		$closure = function( Input\InputInterface &$input, Output\OutputInterface &$output, $time )
+		{
+			$output->buffer( $time );
+		};
+
+		$argTime = (string)microtime( true );
+
+		$input = new Input\Input( ['app'], [] );
+
+		$output = new Output\Output();
+		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
+		$output->setStream( 'file', $streamTarget );
+
+		$middleware = new Middleware( $closure );
+		$middleware->run( $input, $output, $argTime );
+
+		$this->assertFalse( file_exists( $streamTarget ) );
+
+		$output->flush();
+
+		$this->assertTrue( file_exists( $streamTarget ) );
+		$this->assertEquals( $argTime, file_get_contents( $streamTarget ) );
+	}
+
 	public function testRunPassesArgumentsByReference()
 	{
-		$callback = function( Input\InputInterface &$input, &$time )
+		$callback = function( Input\InputInterface &$input, Output\OutputInterface &$output, &$time )
 		{
 			$time = $input->getEnv( 'CRANBERRY_TIME' );
 		};
@@ -64,34 +115,39 @@ class MiddlewareTest extends TestCase
 		$envTime = (string)microtime( true );
 
 		$input = new Input\Input( ['command'], ['CRANBERRY_TIME' => $envTime] );
+		$output = new Output\Output();
 
 		$middleware = new Middleware( $callback );
-		$middleware->run( $input, $argTime );
+		$middleware->run( $input, $output, $argTime );
 
 		$this->assertSame( $envTime, $argTime );
 	}
 
 	public function testRunningCallbackWithNoReturnValueReturnsCONTINUE()
 	{
-		$callback = function( Input\InputInterface &$input ){};
+		$callback = function( Input\InputInterface &$input, Output\OutputInterface &$output ){};
+
 		$input = new Input\Input( ['command'], [] );
+		$output = new Output\Output();
 
 		$middleware = new Middleware( $callback );
-		$returnValue = $middleware->run( $input );
+		$returnValue = $middleware->run( $input, $output );
 
 		$this->assertSame( Middleware::CONTINUE, $returnValue );
 	}
 
 	public function testRunningCallbackWithReturnValueEXITReturnsEXIT()
 	{
-		$callback = function( Input\InputInterface &$input )
+		$callback = function( Input\InputInterface &$input, Output\OutputInterface &$output )
 		{
 			return Middleware::EXIT;
 		};
+
 		$input = new Input\Input( ['command'], [] );
+		$output = new Output\Output();
 
 		$middleware = new Middleware( $callback );
-		$returnValue = $middleware->run( $input );
+		$returnValue = $middleware->run( $input, $output );
 
 		$this->assertSame( Middleware::EXIT, $returnValue );
 	}

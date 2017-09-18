@@ -5,8 +5,8 @@
  */
 namespace Cranberry\Shell\Middleware;
 
-use Cranberry\Shell\OutputInterface;
 use Cranberry\Shell\Input\InputInterface;
+use Cranberry\Shell\Output\OutputInterface;
 
 class Middleware implements MiddlewareInterface
 {
@@ -58,15 +58,18 @@ class Middleware implements MiddlewareInterface
 	 *
 	 * @param	InputInterface	$input	Passed to callback by reference
 	 *
+	 * @param	OutputInterface	$output	Passed to callback by reference
+	 *
 	 * @param	array			$optionalArguments	Array of additional arguments, passed by reference
 	 *
 	 * @return	int
 	 */
-	public function run( InputInterface &$input, &...$optionalArguments ) : int
+	public function run( InputInterface &$input, OutputInterface &$output, &...$optionalArguments ) : int
 	{
 		/* Populate arguments array manually; passing by reference not supported
 		   by `array_unshift`, et al */
 		$requiredArguments[] = &$input;
+		$requiredArguments[] = &$output;
 
 		$allArguments = array_merge( $requiredArguments, $optionalArguments );
 

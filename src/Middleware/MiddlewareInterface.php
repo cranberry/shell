@@ -5,8 +5,8 @@
  */
 namespace Cranberry\Shell\Middleware;
 
-use Cranberry\Shell\OutputInterface;
 use Cranberry\Shell\Input\InputInterface;
+use Cranberry\Shell\Output\OutputInterface;
 
 interface MiddlewareInterface
 {
@@ -41,9 +41,11 @@ interface MiddlewareInterface
 	 *
 	 * @param	InputInterface	$input	Passed to callback by reference
 	 *
+	 * @param	OutputInterface	$output	Passed to callback by reference
+	 *
 	 * @param	array			$optionalArguments	Array of additional arguments, passed by reference
 	 *
 	 * @return	int
 	 */
-	public function run( InputInterface &$input, &...$arguments ) : int;
+	public function run( InputInterface &$input, OutputInterface &$output, &...$arguments ) : int;
 }
