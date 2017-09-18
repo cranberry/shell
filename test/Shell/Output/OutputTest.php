@@ -104,6 +104,17 @@ class OutputTest extends TestCase
 		$this->assertEquals( $expectedContents, $actualContents );
 	}
 
+	/**
+	 * @expectedException	InvalidArgumentException
+	 */
+	public function testSetStreamWithInvalidModeThrowsException()
+	{
+		$output = new Output();
+
+		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
+		$output->setStream( 'file', $streamTarget, 'r' );
+	}
+
 	public function testWriteToStream()
 	{
 		$output = new Output();

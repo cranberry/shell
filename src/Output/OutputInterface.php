@@ -32,9 +32,11 @@ interface OutputInterface
 	 *
 	 * @param	string	$target
 	 *
+	 * @param	string	$mode
+	 *
 	 * @return	void
 	 */
-	public function setStream( string $protocol, string $target );
+	public function setStream( string $protocol, string $target, string $mode='a' );
 
 	/**
 	 * Write string to stream

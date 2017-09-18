@@ -15,7 +15,7 @@ class Output implements OutputInterface
 	/**
 	 * @var	string
 	 */
-	protected $stream='php://stdout';
+	protected $streamURI='php://stdout';
 
 	/**
 	 * Write string to buffer
@@ -49,11 +49,21 @@ class Output implements OutputInterface
 	 *
 	 * @param	string	$target
 	 *
+	 * @param	string	$mode
+	 *
 	 * @return	void
 	 */
-	public function setStream( string $protocol, string $target )
+	public function setStream( string $protocol, string $target, string $mode='a' )
 	{
-		$this->stream = sprintf( '%s://%s', $protocol, $target );
+		$this->streamURI = sprintf( '%s://%s', $protocol, $target );
+
+		$supportedModes = ['w','a','x','c'];
+		if( !in_array( $mode, $supportedModes ) )
+		{
+			throw new \InvalidArgumentException( "Unsupported mode '{$mode}'" );
+		}
+
+		$this->streamMode = $mode;
 	}
 
 	/**
@@ -65,7 +75,7 @@ class Output implements OutputInterface
 	 */
 	public function write( string $string )
 	{
-		$handle = fopen( $this->stream, 'a' );
+		$handle = @fopen( $this->streamURI, $this->streamMode );
 		fwrite( $handle, $string );
 		fclose( $handle );
 	}
