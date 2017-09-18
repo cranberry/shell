@@ -69,6 +69,8 @@ class OutputTest extends TestCase
 	{
 		$output = new Output();
 
+		$output->setStream( 'file', '/dev/null' );
+
 		$output->buffer( 'Hello' );
 		$output->flush();
 
