@@ -5,7 +5,7 @@
  */
 namespace Cranberry\Shell\Middleware;
 
-use Cranberry\Shell;
+use Cranberry\Shell\Input;
 use PHPUnit\Framework\TestCase;
 
 class MiddlewareTest extends TestCase
@@ -23,7 +23,7 @@ class MiddlewareTest extends TestCase
 
 	public function testBindToObject()
 	{
-		$closure = function( Shell\InputInterface &$input, &$time )
+		$closure = function( Input\InputInterface &$input, &$time )
 		{
 			$time = $this->time;
 		};
@@ -33,7 +33,7 @@ class MiddlewareTest extends TestCase
 		$boundObject = new \stdClass();
 		$boundObject->time = (string)microtime( true );
 
-		$input = new Shell\Input( ['app'], [] );
+		$input = new Input\Input( ['app'], [] );
 
 		$middleware = new Middleware( $closure );
 		$middleware->bindTo( $boundObject );
@@ -44,7 +44,7 @@ class MiddlewareTest extends TestCase
 
 	public function testGetCallback()
 	{
-		$closure = function( Shell\InputInterface &$input )
+		$closure = function( Input\InputInterface &$input )
 		{
 			$output->line( time() );
 		};
@@ -55,7 +55,7 @@ class MiddlewareTest extends TestCase
 
 	public function testRunPassesArgumentsByReference()
 	{
-		$callback = function( Shell\InputInterface &$input, &$time )
+		$callback = function( Input\InputInterface &$input, &$time )
 		{
 			$time = $input->getEnv( 'CRANBERRY_TIME' );
 		};
@@ -63,7 +63,7 @@ class MiddlewareTest extends TestCase
 		$argTime = null;
 		$envTime = (string)microtime( true );
 
-		$input = new Shell\Input( ['command'], ['CRANBERRY_TIME' => $envTime] );
+		$input = new Input\Input( ['command'], ['CRANBERRY_TIME' => $envTime] );
 
 		$middleware = new Middleware( $callback );
 		$middleware->run( $input, $argTime );
@@ -73,8 +73,8 @@ class MiddlewareTest extends TestCase
 
 	public function testRunningCallbackWithNoReturnValueReturnsCONTINUE()
 	{
-		$callback = function( Shell\InputInterface &$input ){};
-		$input = new Shell\Input( ['command'], [] );
+		$callback = function( Input\InputInterface &$input ){};
+		$input = new Input\Input( ['command'], [] );
 
 		$middleware = new Middleware( $callback );
 		$returnValue = $middleware->run( $input );
@@ -84,11 +84,11 @@ class MiddlewareTest extends TestCase
 
 	public function testRunningCallbackWithReturnValueEXITReturnsEXIT()
 	{
-		$callback = function( Shell\InputInterface &$input )
+		$callback = function( Input\InputInterface &$input )
 		{
 			return Middleware::EXIT;
 		};
-		$input = new Shell\Input( ['command'], [] );
+		$input = new Input\Input( ['command'], [] );
 
 		$middleware = new Middleware( $callback );
 		$returnValue = $middleware->run( $input );

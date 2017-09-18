@@ -5,8 +5,8 @@
  */
 namespace Cranberry\Shell\Middleware;
 
-use Cranberry\Shell\InputInterface;
 use Cranberry\Shell\OutputInterface;
+use Cranberry\Shell\Input\InputInterface;
 
 class Middleware implements MiddlewareInterface
 {
