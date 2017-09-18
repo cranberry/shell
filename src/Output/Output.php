@@ -15,6 +15,11 @@ class Output implements OutputInterface
 	/**
 	 * @var	string
 	 */
+	protected $streamMode='a';
+
+	/**
+	 * @var	string
+	 */
 	protected $streamURI='php://stdout';
 
 	/**
