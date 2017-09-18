@@ -15,11 +15,14 @@ interface MiddlewareInterface
 
 	/**
 	 * @param	Callable	$callback
+	 *
 	 * @return	void
 	 */
 	public function __construct( Callable $callback );
 
 	/**
+	 * Binds the callback to a new object and scope
+	 *
 	 * @param	object	$object
 	 *
 	 * @return	void
@@ -27,13 +30,18 @@ interface MiddlewareInterface
 	public function bindTo( $object );
 
 	/**
+	 * Returns the callback
+	 *
 	 * @return	Callable
 	 */
 	public function getCallback() : Callable;
 
 	/**
-	 * @param	InputInterface	$input
-	 * @param	array			$arguments	Array of additional arguments
+	 * Calls the callback
+	 *
+	 * @param	InputInterface	$input	Passed to callback by reference
+	 *
+	 * @param	array			$optionalArguments	Array of additional arguments, passed by reference
 	 *
 	 * @return	int
 	 */
