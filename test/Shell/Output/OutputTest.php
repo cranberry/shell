@@ -128,4 +128,20 @@ class OutputTest extends TestCase
 		$actualContents = file_get_contents( $streamTarget );
 		$this->assertEquals( $expectedContents, $actualContents );
 	}
+
+	/**
+	 * @expectedException	InvalidArgumentException
+	 */
+	public function testWriteToUnwritableStreamThrowsException()
+	{
+		$output = new Output();
+
+		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
+		touch( $streamTarget );
+		chmod( $streamTarget, 0500 );
+
+		$output->setStream( 'file', $streamTarget );
+
+		$output->write( 'Hello, world.' );
+	}
 }

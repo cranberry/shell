@@ -76,6 +76,12 @@ class Output implements OutputInterface
 	public function write( string $string )
 	{
 		$handle = @fopen( $this->streamURI, $this->streamMode );
+
+		if( !is_resource( $handle ) )
+		{
+			throw new \InvalidArgumentException( "Invalid or unwritable stream '{$this->streamURI}'" );
+		}
+
 		fwrite( $handle, $string );
 		fclose( $handle );
 	}
