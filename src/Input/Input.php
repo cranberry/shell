@@ -181,6 +181,11 @@ class Input implements InputInterface
 	 */
 	public function getArguments() : array
 	{
+		if( $this->parseSubcommand )
+		{
+			return array_slice( $this->arguments, 1 );
+		}
+
 		return $this->arguments;
 	}
 

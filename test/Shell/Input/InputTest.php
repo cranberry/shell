@@ -148,6 +148,16 @@ class InputTest extends TestCase
 		$input->getArgument( false );
 	}
 
+	public function testGetCommandArgumentsWhenParsingSubcommand()
+	{
+		$input = new Input( ['cranberry', 'command', 'subcommand', 'foo'], [] );
+		$input->parseSubcommand( true );
+
+		$arguments = $input->getArguments();
+		$this->assertSame( 1, count( $arguments ) );
+		$this->assertTrue( in_array( 'foo', $arguments ) );
+	}
+
 	public function testGetCommandOptionsReturnsArray()
 	{
 		$appName = time();
