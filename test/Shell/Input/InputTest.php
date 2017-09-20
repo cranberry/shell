@@ -101,6 +101,27 @@ class InputTest extends TestCase
 		$this->assertSame( $who, $input->getArgumentByIndex(0) );
 	}
 
+	public function testGetCommandArgumentByIndexWhenParsingSubcommand()
+	{
+		$subcommandArg = 'arg-' . microtime( true );
+		$input = new Input( ['cranberry', 'command', 'subcommand', $subcommandArg], [] );
+		$input->parseSubcommand( true );
+
+		$this->assertSame( $subcommandArg, $input->getArgumentByIndex(0) );
+	}
+
+	public function testGetCommandArgumentByNameWhenParsingSubcommand()
+	{
+		$subcommandArg = 'arg-' . microtime( true );
+		$input = new Input( ['cranberry', 'command', 'subcommand', $subcommandArg], [] );
+		$input->parseSubcommand( true );
+
+		$commandArgumentName = 'arg1';
+		$input->nameArgument( 0, $commandArgumentName );
+
+		$this->assertSame( $subcommandArg, $input->getArgumentByName( $commandArgumentName ) );
+	}
+
 	public function testGetCommandArgumentWithIntParameterReturnsByIndex()
 	{
 		$input = new Input( ['cranberry', 'hello', 'Dolly'], [] );
@@ -291,6 +312,26 @@ class InputTest extends TestCase
 		$this->assertSame( $commandOptionValue, $input->getOption( 'foo' ) );
 	}
 
+	/**
+	 * @expectedException	OutOfBoundsException
+	 */
+	public function testGetUndefinedSubcommandThrowsException()
+	{
+		$input = new Input( ['cranberry', 'command'], [] );
+
+		$input->parseSubcommand( true );
+		$input->getSubcommand();
+	}
+
+	/**
+	 * @expectedException	OutOfBoundsException
+	 */
+	public function testGetSubcommandWithoutParsingSubcommandThrowsException()
+	{
+		$input = new Input( ['cranberry', 'command', 'subcommand', 'arg1'], [] );
+		$input->getSubcommand();
+	}
+
 	public function testHasArgumentWithoutMatchingIndexReturnsFalse()
 	{
 		$input = new Input( ['cranberry'], [] );
@@ -390,6 +431,31 @@ class InputTest extends TestCase
 		$this->assertTrue( $input->hasCommandOption( $optionName ) );
 	}
 
+	public function testHasSubcommandReturnsFalseWhenCommandArgumentsEmpty()
+	{
+		$input = new Input( ['cranberry', 'command'], [] );
+
+		$this->assertFalse( $input->hasSubcommand() );
+
+		$input->parseSubcommand( true );
+
+		$this->assertFalse( $input->hasSubcommand() );
+	}
+
+	public function testHasSubcommandReturnsTrueWhenCommandArgumentsNotEmpty()
+	{
+		$subcommandName = 'subcommand-' . microtime( true );
+		$input = new Input( ['cranberry', 'command', $subcommandName, 'arg1'], [] );
+
+		$this->assertFalse( $input->hasSubcommand() );
+
+		$input->parseSubcommand( true );
+
+		$this->assertTrue( $input->hasSubcommand() );
+		$this->assertEquals( $subcommandName, $input->getSubcommand() );
+	}
+
+
 	/**
 	 * @dataProvider	optionProvider
 	 */
@@ -406,6 +472,12 @@ class InputTest extends TestCase
 	{
 		$input = new Input( ['cranberry', 'hello'], [] );
 		$this->assertFalse( $input->hasCommandOption( $optionName ) );
+	}
+
+	public function testHasUndefinedSubcommandReturnsFalse()
+	{
+		$input = new Input( ['cranberry'], [] );
+		$this->assertFalse( $input->hasSubcommand() );
 	}
 
 	/**

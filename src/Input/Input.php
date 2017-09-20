@@ -38,6 +38,11 @@ class Input implements InputInterface
 	protected $env=[];
 
 	/**
+	 * @var	boolean
+	 */
+	protected $parseSubcommand=false;
+
+	/**
 	 * @param	array	$arguments	Array of arguments; like $argv
 	 * @param	array	$env		Array of environment variables; like getenv()
 	 * @return	void
@@ -143,6 +148,11 @@ class Input implements InputInterface
 	 */
 	public function getArgumentByIndex( int $index ) : string
 	{
+		if( $this->parseSubcommand )
+		{
+			$index++;
+		}
+
 		if( !isset( $this->arguments[$index] ) )
 		{
 			throw new \OutOfBoundsException( "Invalid command argument index '{$index}'" );
@@ -246,6 +256,28 @@ class Input implements InputInterface
 	}
 
 	/**
+	 * Returns subcommand name
+	 *
+	 * @throws	OutOfBoundsException	If subcommand is not defined
+	 *
+	 * @return	string
+	 */
+	public function getSubcommand() : string
+	{
+		if( $this->parseSubcommand == false )
+		{
+			throw new \OutOfBoundsException( "Subcommand not defined" );
+		}
+
+		if( count( $this->arguments ) == 0 )
+		{
+			throw new \OutOfBoundsException( "Subcommand not defined" );
+		}
+
+		return $this->arguments[0];
+	}
+
+	/**
 	 * @param	string	$optionName
 	 * @return	boolean
 	 */
@@ -318,6 +350,21 @@ class Input implements InputInterface
 	}
 
 	/**
+	 * Checks if subcommand is defined
+	 *
+	 * @return	boolean
+	 */
+	public function hasSubcommand() : bool
+	{
+		if( $this->parseSubcommand == false )
+		{
+			return false;
+		}
+
+		return count( $this->arguments ) > 0;
+	}
+
+	/**
 	 * @param	int		$index
 	 * @param	string	$name
 	 * @return	void
@@ -325,6 +372,17 @@ class Input implements InputInterface
 	public function nameArgument( int $index, string $name )
 	{
 		$this->argumentNames[$name] = $index;
+	}
+
+	/**
+	 * Specify whether to parse command arguments for a subcommand
+	 *
+	 * @param	boolean	$parseSubcommand
+	 * @return	void
+	 */
+	public function parseSubcommand( bool $parseSubcommand )
+	{
+		$this->parseSubcommand = $parseSubcommand;
 	}
 
 	/**

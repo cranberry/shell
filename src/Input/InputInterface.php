@@ -38,6 +38,15 @@ interface InputInterface
 	public function getOption( string $optionName );
 
 	/**
+	 * Returns subcommand name
+	 *
+	 * @throws	OutOfBoundsException	If subcommand is not defined
+	 *
+	 * @return	string
+	 */
+	public function getSubcommand() : string;
+
+	/**
 	 * @param	int|string	$key
 	 * @return	boolean
 	 */
@@ -59,4 +68,19 @@ interface InputInterface
 	 * @return	boolean
 	 */
 	public function hasOption( string $optionName ) : bool;
+
+	/**
+	 * Checks if subcommand is defined
+	 *
+	 * @return	boolean
+	 */
+	public function hasSubcommand() : bool;
+
+	/**
+	 * Specify whether to parse command arguments for a subcommand
+	 *
+	 * @param	boolean	$parseSubcommand
+	 * @return	void
+	 */
+	public function parseSubcommand( bool $parseSubcommand );
 }
