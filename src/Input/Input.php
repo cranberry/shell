@@ -294,6 +294,11 @@ class Input implements InputInterface
 	{
 		if( is_int( $key ) )
 		{
+			if( $this->parseSubcommand )
+			{
+				$key++;
+			}
+
 			return isset( $this->arguments[$key] );
 		}
 

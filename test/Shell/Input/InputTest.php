@@ -350,12 +350,33 @@ class InputTest extends TestCase
 		$this->assertTrue( $input->hasArgument( 0 ) );
 	}
 
+	public function testHasArgumentWithMatchingIndexWhenParsingSubcommand()
+	{
+		$subcommandArg = 'arg-' . microtime( true );
+		$input = new Input( ['cranberry', 'command', 'subcommand', $subcommandArg], [] );
+		$input->parseSubcommand( true );
+
+		$this->assertTrue( $input->hasArgument( 0 ) );
+		$this->assertFalse( $input->hasArgument( 1 ) );
+	}
+
 	public function testHasArgumentWithMatchingNameReturnsFalse()
 	{
 		$input = new Input( ['cranberry', 'command', 'bar'], [] );
 		$input->nameArgument( 0, 'foo' );
 
 		$this->assertTrue( $input->hasArgument( 'foo' ) );
+	}
+
+	public function testHasArgumentWithMatchingNameWhenParsingSubcommand()
+	{
+		$subcommandArg = 'arg-' . microtime( true );
+
+		$input = new Input( ['cranberry', 'command', 'subcommand', $subcommandArg], [] );
+		$input->nameArgument( 0, 'arg1' );
+		$input->parseSubcommand( true );
+
+		$this->assertTrue( $input->hasArgument( 'arg1' ) );
 	}
 
 	public function testHasCommandWithoutMatchReturnsFalse()
