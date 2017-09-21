@@ -77,6 +77,31 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( $version, $application->getVersion() );
 	}
 
+	public function testMiddlewareIsBoundToApplication()
+	{
+		$inputStub = $this->getInputStub();
+		$outputStub = $this->getOutputStub();
+
+		$appVersion = '1.' . microtime( true );
+		$application = new Application( 'foo', $appVersion, $inputStub, $outputStub );
+
+		$middlewareParam = new \stdClass();
+		$this->assertFalse( isset( $middlewareParam->name ) );
+		$this->assertFalse( isset( $middlewareParam->version ) );
+
+		$application->registerMiddlewareParameter( $middlewareParam );
+
+		$application->pushMiddleware( new Middleware\Middleware( function( &$input, &$output, &$object )
+		{
+			$object->version = $this->getVersion();
+		}));
+
+		$application->run();
+
+		$this->assertTrue( isset( $middlewareParam->version ) );
+		$this->assertEquals( $appVersion, $middlewareParam->version );
+	}
+
 	public function testPushMiddlewareAppendsToEndOfQueue()
 	{
 		$envTime = (string) microtime( true );

@@ -125,6 +125,8 @@ class Application
 				continue;
 			}
 
+			$middleware->bindTo( $this );
+
 			$parameters = $this->middlewareParameters;
 
 			array_unshift( $parameters, $this->output );
