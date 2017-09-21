@@ -111,8 +111,20 @@ class Application
 	 */
 	public function run()
 	{
+		$route = '';
+
+		if( $this->input->hasCommand() )
+		{
+			$route = $this->input->getCommand();
+		}
+
 		foreach( $this->middlewareQueue as $middleware )
 		{
+			if( !$middleware->matchesRoute( $route ) )
+			{
+				continue;
+			}
+
 			$parameters = $this->middlewareParameters;
 
 			array_unshift( $parameters, $this->output );

@@ -129,6 +129,44 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( 'bar', $middlewareParam->foo );
 	}
 
+	public function testRunRoutesMiddlewareWithCommandName()
+	{
+		$input = new Input\Input( ['cranberry', 'command'], [] );
+		$outputStub = $this->getOutputStub();
+
+		$application = new Application( 'foo', '1.23b', $input, $outputStub );
+
+		$paramInt = 0;
+		$application->registerMiddlewareParameter( $paramInt );
+
+		/* 1: Command match */
+		$middleware_1 = new Middleware\Middleware( function( &$input, &$output, &$int )
+		{
+			$int = $int + 1;
+		});
+		$middleware_1->setRoute( 'command' );
+		$application->pushMiddleware( $middleware_1 );
+
+		/* 2: Optional subcommand match */
+		$middleware_2 = new Middleware\Middleware( function( &$input, &$output, &$int )
+		{
+			$int = $int + 2;
+		});
+		$middleware_2->setRoute( 'command( \S+)?' );
+		$application->pushMiddleware( $middleware_2 );
+
+		/* 3: Required subcommand mismatch */
+		$middleware_3 = new Middleware\Middleware( function( &$input, &$output, &$int )
+		{
+			$int = $int + 4;
+		});
+		$middleware_3->setRoute( 'command subcommand' );
+		$application->pushMiddleware( $middleware_3 );
+
+		$application->run();
+		$this->assertEquals( 3, $paramInt );
+	}
+
 	public function testRunExitsWhenMiddlewareReturnsEXIT()
 	{
 		$inputStub = $this->getInputStub();
