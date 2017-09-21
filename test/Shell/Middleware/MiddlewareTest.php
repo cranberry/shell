@@ -16,6 +16,17 @@ class MiddlewareTest extends TestCase
 	 */
 	protected static $tempPathname;
 
+	public function __routePatternProvider()
+	{
+		return [
+			['[show|ls]', 'ls'],					// aliases
+			['[show|ls]', 'show'],					// aliases
+			['queue( \S+)?', 'queue'],				// optional argument
+			['queue( \S+)?', 'queue shuffle'],		// optional argument
+			['queue \S+', 'queue shuffle'],			// required argument
+		];
+	}
+
 	public static function setUpBeforeClass()
 	{
 		self::$tempPathname = dirname( dirname( __DIR__ ) ) . '/fixtures/temp';
@@ -150,5 +161,31 @@ class MiddlewareTest extends TestCase
 		$returnValue = $middleware->run( $input, $output );
 
 		$this->assertSame( Middleware::EXIT, $returnValue );
+	}
+
+	public function testMatchesUndefinedRouteReturnsTrue()
+	{
+		$middleware = new Middleware( function(){} );
+
+		$this->assertTrue( $middleware->matchesRoute( 'foo' ) );
+	}
+
+	public function testMatchMismatchedRouteReturnsFalse()
+	{
+		$middleware = new Middleware( function(){} );
+		$middleware->setRoute( '[show|ls]' );
+
+		$this->assertFalse( $middleware->matchesRoute( 'add' ) );
+	}
+
+	/**
+	 * @dataProvider	__routePatternProvider
+	 */
+	public function testMatchMatchingRouteReturnsTrue( $pattern, $route )
+	{
+		$middleware = new Middleware( function(){} );
+		$middleware->setRoute( $pattern );
+
+		$this->assertTrue( $middleware->matchesRoute( $route ) );
 	}
 }

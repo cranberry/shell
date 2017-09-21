@@ -37,6 +37,15 @@ interface MiddlewareInterface
 	public function getCallback() : Callable;
 
 	/**
+	 * Finds whether middleware matches route
+	 *
+	 * @param	string	$route
+	 *
+	 * @return	boolean
+	 */
+	public function matchesRoute( string $route ) : bool;
+
+	/**
 	 * Calls the callback
 	 *
 	 * @param	InputInterface	$input	Passed to callback by reference
@@ -48,4 +57,13 @@ interface MiddlewareInterface
 	 * @return	int
 	 */
 	public function run( InputInterface $input, OutputInterface $output, &...$arguments ) : int;
+
+	/**
+	 * Sets the route
+	 *
+	 * @param	string	$route
+	 *
+	 * @return	void
+	 */
+	public function setRoute( string $route );
 }

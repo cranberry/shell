@@ -16,6 +16,11 @@ class Middleware implements MiddlewareInterface
 	protected $callback;
 
 	/**
+	 * @var	string
+	 */
+	protected $route;
+
+	/**
 	 * @param	Callable	$callback
 	 *
 	 * @return	void
@@ -54,6 +59,28 @@ class Middleware implements MiddlewareInterface
 	}
 
 	/**
+	 * Checks whether middleware matches a route
+	 *
+	 * Middleware which does not define a route pattern will match all routes
+	 *
+	 * @param	string	$route
+	 *
+	 * @return	boolean
+	 */
+	public function matchesRoute( string $route ) : bool
+	{
+		if( $this->route == null )
+		{
+			return true;
+		}
+
+		$pattern = sprintf( '/%s/', $this->route );
+		$result = preg_match( $pattern, $route );
+
+		return $result === 1;
+	}
+
+	/**
 	 * Calls the callback
 	 *
 	 * @param	InputInterface	$input	Passed to callback by reference
@@ -80,5 +107,17 @@ class Middleware implements MiddlewareInterface
 		}
 
 		return self::CONTINUE;
+	}
+
+	/**
+	 * Sets the route
+	 *
+	 * @param string	$route
+	 *
+	 * @return	void
+	 */
+	public function setRoute( string $route )
+	{
+		$this->route = $route;
 	}
 }
