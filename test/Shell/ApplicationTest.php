@@ -106,6 +106,29 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( "It's {$envTime}", file_get_contents( $streamTarget ) );
 	}
 
+	public function testRegisterMiddlewareParameter()
+	{
+		$inputStub = $this->getInputStub();
+		$outputStub = $this->getOutputStub();
+
+		$middlewareParam = new \stdClass();
+		$this->assertFalse( isset( $middlewareParam->foo ) );
+
+		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
+		$application->registerMiddlewareParameter( $middlewareParam );
+
+		$middleware = new Middleware\Middleware( function( &$input, &$output, &$object )
+		{
+			$object->foo = 'bar';
+		});
+		$application->pushMiddleware( $middleware );
+
+		$application->run();
+
+		$this->assertTrue( isset( $middlewareParam->foo ) );
+		$this->assertEquals( 'bar', $middlewareParam->foo );
+	}
+
 	public function testRunExitsWhenMiddlewareReturnsEXIT()
 	{
 		$inputStub = $this->getInputStub();

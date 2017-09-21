@@ -47,5 +47,5 @@ interface MiddlewareInterface
 	 *
 	 * @return	int
 	 */
-	public function run( InputInterface &$input, OutputInterface &$output, &...$arguments ) : int;
+	public function run( InputInterface $input, OutputInterface $output, &...$arguments ) : int;
 }

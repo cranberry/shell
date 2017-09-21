@@ -64,7 +64,7 @@ class Middleware implements MiddlewareInterface
 	 *
 	 * @return	int
 	 */
-	public function run( InputInterface &$input, OutputInterface &$output, &...$optionalArguments ) : int
+	public function run( InputInterface $input, OutputInterface $output, &...$optionalArguments ) : int
 	{
 		/* Populate arguments array manually; passing by reference not supported
 		   by `array_unshift`, et al */

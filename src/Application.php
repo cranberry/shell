@@ -19,6 +19,11 @@ class Application
 	/**
 	 * @var	array
 	 */
+	protected $middlewareParameters=[];
+
+	/**
+	 * @var	array
+	 */
 	protected $middlewareQueue=[];
 
 	/**
@@ -88,6 +93,18 @@ class Application
 	}
 
 	/**
+	 * Push a parameter onto the array of parameters passed to Middleware::run()
+	 *
+	 * @param	mixed	$parameter
+	 *
+	 * @return	void
+	 */
+	public function registerMiddlewareParameter( &$parameter )
+	{
+		$this->middlewareParameters[] = &$parameter;
+	}
+
+	/**
 	 * Process middleware queue
 	 *
 	 * @return	void
@@ -96,7 +113,12 @@ class Application
 	{
 		foreach( $this->middlewareQueue as $middleware )
 		{
-			$returnValue = $middleware->run( $this->input, $this->output );
+			$parameters = $this->middlewareParameters;
+
+			array_unshift( $parameters, $this->output );
+			array_unshift( $parameters, $this->input );
+
+			$returnValue = call_user_func_array( [$middleware, 'run'], $parameters );
 
 			if( $returnValue == Middleware\MiddlewareInterface::EXIT )
 			{
