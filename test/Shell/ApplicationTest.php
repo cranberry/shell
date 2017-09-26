@@ -104,6 +104,23 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( $version, $application->getVersion() );
 	}
 
+	public function testInvalidCommand()
+	{
+		$appName = 'app-' . microtime( true );
+		$commandName = 'command-' . microtime( true );
+		$input = new Input\Input( [$appName, $commandName], [] );
+
+		$output = new Output\Output();
+		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
+		$output->setStream( 'file', $streamTarget );
+
+		$application = new Application( $appName, '1.23', $input, $output );
+		$application->run();
+
+		$this->assertTrue( file_exists( $streamTarget ) );
+		$this->assertEquals( sprintf( Application::ERROR_STRING_INVALIDCOMMAND, $appName, $commandName ) . PHP_EOL, file_get_contents( $streamTarget ) );
+	}
+
 	public function testMiddlewareIsBoundToApplication()
 	{
 		$inputStub = $this->getInputStub();
@@ -232,24 +249,25 @@ class ApplicationTest extends TestCase
 		$middleware_1->setRoute( 'command' );
 		$application->pushMiddleware( $middleware_1 );
 
-		/* 2: Optional subcommand match */
+		/* 2: Required subcommand mismatch */
 		$middleware_2 = new Middleware\Middleware( function( &$input, &$output )
 		{
 			$output->write( '2' );
 		});
-		$middleware_2->setRoute( 'command( \S+)?' );
+		$middleware_2->setRoute( 'command subcommand' );
 		$application->pushMiddleware( $middleware_2 );
 
-		/* 3: Required subcommand mismatch */
+		/* 3: Optional subcommand match */
 		$middleware_3 = new Middleware\Middleware( function( &$input, &$output )
 		{
 			$output->write( '3' );
+			return Middleware\Middleware::EXIT;
 		});
-		$middleware_3->setRoute( 'command subcommand' );
+		$middleware_3->setRoute( 'command( \S+)?' );
 		$application->pushMiddleware( $middleware_3 );
 
 		$application->run();
-		$this->assertEquals( '12', file_get_contents( $streamTarget ) );
+		$this->assertEquals( '13', file_get_contents( $streamTarget ) );
 	}
 
 	public function testRunExitsWhenMiddlewareReturnsEXIT()

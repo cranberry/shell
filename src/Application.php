@@ -12,6 +12,8 @@ use Cranberry\Shell\Autoloader;
 
 class Application
 {
+	const ERROR_STRING_INVALIDCOMMAND = "%1\$s: '%2\$s' is not a %1\$s command. See '%1\$s --help'.";
+
 	/**
 	 * @var	array
 	 */
@@ -141,6 +143,23 @@ class Application
 	 */
 	public function run()
 	{
+		/* Add last-defense error-handling middleware */
+		$this->pushMiddleware( new Middleware\Middleware( function( $input, &$output )
+		{
+			if( $input->hasCommand() )
+			{
+				throw new Exception\InvalidCommandException( $input->getCommand() );
+			}
+		}));
+		$this->pushErrorMiddleware( new Middleware\Middleware( function( $input, &$output, \Exception $exception )
+		{
+			if( $exception instanceof Exception\InvalidCommandException )
+			{
+				$output->write( sprintf( self::ERROR_STRING_INVALIDCOMMAND, $this->getName(), $input->getCommand() ) . PHP_EOL );
+			}
+		}));
+
+		/* Route and execute middleware queue */
 		$route = '';
 
 		if( $this->input->hasCommand() )
