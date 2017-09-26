@@ -52,11 +52,11 @@ interface MiddlewareInterface
 	 *
 	 * @param	OutputInterface	$output	Passed to callback by reference
 	 *
-	 * @param	array			$optionalArguments	Array of additional arguments, passed by reference
+	 * @param	array			$optionalArguments	Array of additional arguments, passed by value
 	 *
 	 * @return	int
 	 */
-	public function run( InputInterface $input, OutputInterface $output, &...$arguments ) : int;
+	public function run( InputInterface $input, OutputInterface $output, ...$optionalArguments ) : int;
 
 	/**
 	 * Sets the route

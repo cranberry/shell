@@ -87,20 +87,20 @@ class Middleware implements MiddlewareInterface
 	 *
 	 * @param	OutputInterface	$output	Passed to callback by reference
 	 *
-	 * @param	array			$optionalArguments	Array of additional arguments, passed by reference
+	 * @param	array			$optionalArguments	Array of additional arguments, passed by value
 	 *
 	 * @return	int
 	 */
-	public function run( InputInterface $input, OutputInterface $output, &...$optionalArguments ) : int
+	public function run( InputInterface $input, OutputInterface $output, ...$optionalArguments ) : int
 	{
 		/* Populate arguments array manually; passing by reference not supported
 		   by `array_unshift`, et al */
-		$requiredArguments[] = &$input;
-		$requiredArguments[] = &$output;
+		$arguments[] = &$input;
+		$arguments[] = &$output;
 
-		$allArguments = array_merge( $requiredArguments, $optionalArguments );
+		$arguments = array_merge( $arguments, $optionalArguments );
 
-		$returnValue = call_user_func_array( $this->callback, $allArguments );
+		$returnValue = call_user_func_array( $this->callback, $arguments );
 		if( $returnValue === self::EXIT )
 		{
 			return self::EXIT;

@@ -91,7 +91,7 @@ class ApplicationTest extends TestCase
 
 		$application->registerMiddlewareParameter( $middlewareParam );
 
-		$application->pushMiddleware( new Middleware\Middleware( function( &$input, &$output, &$object )
+		$application->pushMiddleware( new Middleware\Middleware( function( &$input, &$output, $object )
 		{
 			$object->version = $this->getVersion();
 		}));
@@ -142,7 +142,7 @@ class ApplicationTest extends TestCase
 		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
 		$application->registerMiddlewareParameter( $middlewareParam );
 
-		$middleware = new Middleware\Middleware( function( &$input, &$output, &$object )
+		$middleware = new Middleware\Middleware( function( &$input, &$output, $object )
 		{
 			$object->foo = 'bar';
 		});
@@ -157,39 +157,39 @@ class ApplicationTest extends TestCase
 	public function testRunRoutesMiddlewareWithCommandName()
 	{
 		$input = new Input\Input( ['cranberry', 'command'], [] );
-		$outputStub = $this->getOutputStub();
 
-		$application = new Application( 'foo', '1.23b', $input, $outputStub );
+		$output = new Output\Output();
+		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
+		$output->setStream( 'file', $streamTarget );
 
-		$paramInt = 0;
-		$application->registerMiddlewareParameter( $paramInt );
+		$application = new Application( 'foo', '1.23b', $input, $output );
 
 		/* 1: Command match */
-		$middleware_1 = new Middleware\Middleware( function( &$input, &$output, &$int )
+		$middleware_1 = new Middleware\Middleware( function( &$input, &$output )
 		{
-			$int = $int + 1;
+			$output->write( '1' );
 		});
 		$middleware_1->setRoute( 'command' );
 		$application->pushMiddleware( $middleware_1 );
 
 		/* 2: Optional subcommand match */
-		$middleware_2 = new Middleware\Middleware( function( &$input, &$output, &$int )
+		$middleware_2 = new Middleware\Middleware( function( &$input, &$output )
 		{
-			$int = $int + 2;
+			$output->write( '2' );
 		});
 		$middleware_2->setRoute( 'command( \S+)?' );
 		$application->pushMiddleware( $middleware_2 );
 
 		/* 3: Required subcommand mismatch */
-		$middleware_3 = new Middleware\Middleware( function( &$input, &$output, &$int )
+		$middleware_3 = new Middleware\Middleware( function( &$input, &$output )
 		{
-			$int = $int + 4;
+			$output->write( '3' );
 		});
 		$middleware_3->setRoute( 'command subcommand' );
 		$application->pushMiddleware( $middleware_3 );
 
 		$application->run();
-		$this->assertEquals( 3, $paramInt );
+		$this->assertEquals( '12', file_get_contents( $streamTarget ) );
 	}
 
 	public function testRunExitsWhenMiddlewareReturnsEXIT()

@@ -58,24 +58,22 @@ class MiddlewareTest extends TestCase
 
 	public function testBindToObject()
 	{
-		$closure = function( Input\InputInterface &$input, Output\OutputInterface &$output, &$time )
+		$closure = function( Input\InputInterface &$input, Output\OutputInterface &$output )
 		{
-			$time = $this->time;
+			$this->time = $input->getEnv( 'CRANBERRY_TIME' );
 		};
 
-		$argTime = null;
-
+		$envTime = (string) microtime( true );
 		$boundObject = new \stdClass();
-		$boundObject->time = (string)microtime( true );
 
-		$input = new Input\Input( ['app'], [] );
+		$input = new Input\Input( ['app'], ['CRANBERRY_TIME' => $envTime] );
 		$output = new Output\Output();
 
 		$middleware = new Middleware( $closure );
 		$middleware->bindTo( $boundObject );
-		$middleware->run( $input, $output, $argTime );
+		$middleware->run( $input, $output );
 
-		$this->assertSame( $boundObject->time, $argTime );
+		$this->assertSame( $boundObject->time, $envTime );
 	}
 
 	public function testGetCallback()
@@ -89,49 +87,30 @@ class MiddlewareTest extends TestCase
 		$this->assertSame( $closure, $middleware->getCallback() );
 	}
 
-	public function testFlushOutputBuffer()
+	public function testRunPassesDefaultArgumentsByReference()
 	{
-		$closure = function( Input\InputInterface &$input, Output\OutputInterface &$output, $time )
+		$closure = function( Input\InputInterface &$input, Output\OutputInterface &$output )
 		{
-			$output->buffer( $time );
+			$output->buffer( $input->getEnv( 'CRANBERRY_TIME' ) );
 		};
 
-		$argTime = (string)microtime( true );
+		$envTime = (string) microtime( true );
 
-		$input = new Input\Input( ['app'], [] );
+		$input = new Input\Input( ['app'], ['CRANBERRY_TIME' => $envTime] );
 
 		$output = new Output\Output();
 		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
 		$output->setStream( 'file', $streamTarget );
 
 		$middleware = new Middleware( $closure );
-		$middleware->run( $input, $output, $argTime );
+		$middleware->run( $input, $output );
 
 		$this->assertFalse( file_exists( $streamTarget ) );
 
 		$output->flush();
 
 		$this->assertTrue( file_exists( $streamTarget ) );
-		$this->assertEquals( $argTime, file_get_contents( $streamTarget ) );
-	}
-
-	public function testRunPassesArgumentsByReference()
-	{
-		$callback = function( Input\InputInterface &$input, Output\OutputInterface &$output, &$time )
-		{
-			$time = $input->getEnv( 'CRANBERRY_TIME' );
-		};
-
-		$argTime = null;
-		$envTime = (string)microtime( true );
-
-		$input = new Input\Input( ['command'], ['CRANBERRY_TIME' => $envTime] );
-		$output = new Output\Output();
-
-		$middleware = new Middleware( $callback );
-		$middleware->run( $input, $output, $argTime );
-
-		$this->assertSame( $envTime, $argTime );
+		$this->assertEquals( $envTime, file_get_contents( $streamTarget ) );
 	}
 
 	public function testRunningCallbackWithNoReturnValueReturnsCONTINUE()
