@@ -8,7 +8,6 @@ namespace Cranberry\Shell;
 use Cranberry\Shell\Input;
 use Cranberry\Shell\Middleware;
 use Cranberry\Shell\Output;
-use Cranberry\Shell\Autoloader;
 
 class Application
 {
