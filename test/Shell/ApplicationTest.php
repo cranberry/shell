@@ -246,4 +246,27 @@ class ApplicationTest extends TestCase
 		$this->assertTrue( file_exists( $streamTarget ) );
 		$this->assertEquals( "It's {$envTime}", file_get_contents( $streamTarget ) );
 	}
+
+	public function testVersionOption()
+	{
+		$inputStub = $this->getInputStub();
+		$inputStub
+			->method( 'hasOption' )
+			->willReturn( true );
+
+		$output = new Output\Output();
+		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
+		$output->setStream( 'file', $streamTarget );
+
+		$appName = 'app-' . microtime( true );
+		$appVersion = '1.' . microtime( true );
+		$application = new Application( $appName, $appVersion, $inputStub, $output );
+
+		$this->assertFalse( file_exists( $streamTarget ) );
+
+		$application->run();
+
+		$this->assertTrue( file_exists( $streamTarget ) );
+		$this->assertEquals( sprintf( '%s version %s' . PHP_EOL, $appName, $appVersion ), file_get_contents( $streamTarget ) );
+	}
 }

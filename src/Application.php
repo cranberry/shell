@@ -6,6 +6,7 @@
 namespace Cranberry\Shell;
 
 use Cranberry\Shell\Input;
+use Cranberry\Shell\Middleware;
 use Cranberry\Shell\Output;
 use Cranberry\Shell\Autoloader;
 
@@ -58,6 +59,18 @@ class Application
 		$this->version = $version;
 		$this->input = $input;
 		$this->output = $output;
+
+		/* --version */
+		$this->pushMiddleware( new Middleware\Middleware( function( $input, &$output )
+		{
+			if( $input->hasOption( 'version' ) )
+			{
+				$version = sprintf( '%s version %s', $this->getName(), $this->getVersion() );
+				$output->write( $version . PHP_EOL );
+
+				return Middleware\Middleware::EXIT;
+			}
+		}));
 	}
 
 	/**
