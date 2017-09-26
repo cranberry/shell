@@ -55,6 +55,33 @@ class ApplicationTest extends TestCase
 		return $inputStub;
 	}
 
+	public function testErrorMiddlewareIsBoundToApplication()
+	{
+		$inputStub = $this->getInputStub();
+
+		$output = new Output\Output();
+		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
+		$output->setStream( 'file', $streamTarget );
+
+		$appVersion = '1.' . microtime( true );
+		$application = new Application( 'foo', $appVersion, $inputStub, $output );
+
+		$application->pushMiddleware( new Middleware\Middleware( function( &$input, &$output )
+		{
+			throw new \Exception( 'An error occurred' );
+		}));
+
+		$application->pushErrorMiddleware( new Middleware\Middleware( function( &$input, &$output, \Exception $exception )
+		{
+			$output->write( $this->getVersion() );
+		}));
+
+		$application->run();
+
+		$this->assertTrue( file_exists( $streamTarget ) );
+		$this->assertEquals( $appVersion, file_get_contents( $streamTarget ) );
+	}
+
 	public function testGetName()
 	{
 		$name = 'foo-' . microtime( true );
@@ -100,6 +127,39 @@ class ApplicationTest extends TestCase
 
 		$this->assertTrue( isset( $middlewareParam->version ) );
 		$this->assertEquals( $appVersion, $middlewareParam->version );
+	}
+
+	public function testPushErrorMiddlewareAppendsToEndOfQueue()
+	{
+		$envTime = (string) microtime( true );
+		$inputStub = $this->getInputStub();
+		$inputStub
+			->method( 'getEnv' )
+			->willReturn( $envTime );
+
+		$output = new Output\Output();
+		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
+		$output->setStream( 'file', $streamTarget );
+
+		$application = new Application( 'foo', '1.23b', $inputStub, $output );
+
+		$application->pushMiddleware( new Middleware\Middleware( function( &$input, &$output )
+		{
+			throw new \Exception( 'Invalid request', 1 );
+		}));
+		$application->pushErrorMiddleware( new Middleware\Middleware( function( &$input, &$output, \Exception $exception )
+		{
+			$output->write( 'An error' );
+		}));
+		$application->pushErrorMiddleware( new Middleware\Middleware( function( &$input, &$output, \Exception $exception )
+		{
+			$output->write( ' occurred: ' . $exception->getMessage() );
+		}));
+
+		$application->run();
+
+		$this->assertTrue( file_exists( $streamTarget ) );
+		$this->assertEquals( 'An error occurred: Invalid request', file_get_contents( $streamTarget ) );
 	}
 
 	public function testPushMiddlewareAppendsToEndOfQueue()
@@ -216,6 +276,40 @@ class ApplicationTest extends TestCase
 
 		$this->assertTrue( file_exists( $streamTarget ) );
 		$this->assertEquals( 'HELLO', file_get_contents( $streamTarget ) );
+	}
+
+	public function testUnshiftErrorMiddlewarePrependsToBeginningOfQueue()
+	{
+		$envTime = (string) microtime( true );
+		$inputStub = $this->getInputStub();
+		$inputStub
+			->method( 'getEnv' )
+			->willReturn( $envTime );
+
+		$output = new Output\Output();
+		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
+		$output->setStream( 'file', $streamTarget );
+
+		$application = new Application( 'foo', '1.23b', $inputStub, $output );
+
+		$application->pushMiddleware( new Middleware\Middleware( function( &$input, &$output )
+		{
+			throw new \Exception( 'Invalid request', 1 );
+		}));
+
+		$application->pushErrorMiddleware( new Middleware\Middleware( function( &$input, &$output, \Exception $exception )
+		{
+			$output->write( ' occurred: ' . $exception->getMessage() );
+		}));
+		$application->unshiftErrorMiddleware( new Middleware\Middleware( function( &$input, &$output, \Exception $exception )
+		{
+			$output->write( 'An error' );
+		}));
+
+		$application->run();
+
+		$this->assertTrue( file_exists( $streamTarget ) );
+		$this->assertEquals( 'An error occurred: Invalid request', file_get_contents( $streamTarget ) );
 	}
 
 	public function testUnshiftMiddlewarePrependsToBeginningOfQueue()

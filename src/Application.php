@@ -13,6 +13,11 @@ use Cranberry\Shell\Autoloader;
 class Application
 {
 	/**
+	 * @var	array
+	 */
+	protected $errorMiddlewareQueue=[];
+
+	/**
 	 * @var	Cranberry\Shell\Input\InputInterface
 	 */
 	protected $input;
@@ -94,6 +99,18 @@ class Application
 	}
 
 	/**
+	 * Push a Middleware object onto the end of the error queue
+	 *
+	 * @param	Cranberry\Shell\Middleware\MiddlewareInterface	$middleware
+	 *
+	 * @return	void
+	 */
+	public function pushErrorMiddleware( Middleware\MiddlewareInterface $middleware )
+	{
+		array_push( $this->errorMiddlewareQueue, $middleware );
+	}
+
+	/**
 	 * Push a Middleware object onto the end of the run() queue
 	 *
 	 * @param	Cranberry\Shell\Middleware\MiddlewareInterface	$middleware
@@ -145,13 +162,45 @@ class Application
 			array_unshift( $parameters, $this->output );
 			array_unshift( $parameters, $this->input );
 
-			$returnValue = call_user_func_array( [$middleware, 'run'], $parameters );
-
-			if( $returnValue == Middleware\MiddlewareInterface::EXIT )
+			try
 			{
+				$returnValue = call_user_func_array( [$middleware, 'run'], $parameters );
+
+				if( $returnValue == Middleware\MiddlewareInterface::EXIT )
+				{
+					break;
+				}
+			}
+			catch( \Exception $exception )
+			{
+				foreach( $this->errorMiddlewareQueue as $errorMiddleware )
+				{
+					$errorMiddleware->bindTo( $this );
+
+					$parameters = $this->middlewareParameters;
+
+					array_unshift( $parameters, $exception );
+					array_unshift( $parameters, $this->output );
+					array_unshift( $parameters, $this->input );
+
+					call_user_func_array( [$errorMiddleware, 'run'], $parameters );
+				}
+
 				break;
 			}
 		}
+	}
+
+	/**
+	 * Prepend a Middleware object to the beginning of the error queue
+	 *
+	 * @param	Cranberry\Shell\Middleware\MiddlewareInterface	$middleware
+	 *
+	 * @return	void
+	 */
+	public function unshiftErrorMiddleware( Middleware\MiddlewareInterface $middleware )
+	{
+		array_unshift( $this->errorMiddlewareQueue, $middleware );
 	}
 
 	/**
