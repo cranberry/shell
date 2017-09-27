@@ -175,6 +175,67 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( sprintf( Application::ERROR_STRING_INVALIDCOMMAND, $appName, $commandName ) . PHP_EOL, file_get_contents( $streamTarget ) );
 	}
 
+	public function testInvalidCommandUsage()
+	{
+		$appName = 'app-' . microtime( true );
+		$commandName = 'command-' . microtime( true );
+		$commandUsage = '<arg1> [<arg2>]';
+
+		$input = new Input\Input( [$appName, $commandName], [] );
+
+		$output = new Output\Output();
+		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
+		$output->setStream( 'file', $streamTarget );
+
+		$application = new Application( $appName, '1.23', $input, $output );
+		$application->setCommandUsage( $commandName, $commandUsage );
+
+		$middleware = new Middleware\Middleware( function( $input, $output )
+		{
+			$input->nameArgument( 0, 'arg1' );
+			$input->nameArgument( 1, 'arg2' );
+
+			if( !$input->hasArgument( 'arg1' ) )
+			{
+				throw new \Cranberry\Shell\Exception\InvalidCommandUsageException();
+			}
+		});
+
+		$application->pushMiddleware( $middleware );
+		$application->run();
+
+		$this->assertTrue( file_exists( $streamTarget ) );
+		$this->assertEquals( sprintf( Application::ERROR_STRING_INVALIDCOMMANDUSAGE, $appName, $commandName, $commandUsage ) . PHP_EOL, file_get_contents( $streamTarget ) );
+	}
+
+	/**
+	 * @expectedException	OutOfBoundsException
+	 */
+	public function testInvalidCommandUsageWithUndefinedUsageThrowsException()
+	{
+		$appName = 'app-' . microtime( true );
+		$commandName = 'command-' . microtime( true );
+
+		$input = new Input\Input( [$appName, $commandName], [] );
+		$output = new Output\Output();
+
+		$application = new Application( $appName, '1.23', $input, $output );
+
+		$middleware = new Middleware\Middleware( function( $input, $output )
+		{
+			$input->nameArgument( 0, 'arg1' );
+			$input->nameArgument( 1, 'arg2' );
+
+			if( !$input->hasArgument( 'arg1' ) )
+			{
+				throw new \Cranberry\Shell\Exception\InvalidCommandUsageException();
+			}
+		});
+
+		$application->pushMiddleware( $middleware );
+		$application->run();
+	}
+
 	public function testMiddlewareIsBoundToApplication()
 	{
 		$inputStub = $this->getInputStub();

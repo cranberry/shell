@@ -12,6 +12,7 @@ use Cranberry\Shell\Output;
 class Application
 {
 	const ERROR_STRING_INVALIDCOMMAND = "%1\$s: '%2\$s' is not a %1\$s command. See '%1\$s --help'.";
+	const ERROR_STRING_INVALIDCOMMANDUSAGE = 'usage: %s %s %s';
 
 	/**
 	 * @var	array
@@ -97,6 +98,14 @@ class Application
 		});
 		$invalidCommandMiddleware->setRoute( Exception\InvalidCommandException::class );
 		$this->pushErrorMiddleware( $invalidCommandMiddleware );
+
+		$invalidCommandUsageMiddleware = new Middleware\Middleware( function( Input\InputInterface $input, Output\OutputInterface &$output, Exception\InvalidCommandUsageException $exception )
+		{
+			$commandName = $input->getCommand();
+			$output->write( sprintf( self::ERROR_STRING_INVALIDCOMMANDUSAGE, $this->getName(), $commandName, $this->getCommandUsage( $commandName ) ) . PHP_EOL );
+		});
+		$invalidCommandUsageMiddleware->setRoute( Exception\InvalidCommandUsageException::class );
+		$this->pushErrorMiddleware( $invalidCommandUsageMiddleware );
 	}
 
 	/**
