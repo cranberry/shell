@@ -82,6 +82,35 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( $appVersion, file_get_contents( $streamTarget ) );
 	}
 
+	public function testGetCommandUsage()
+	{
+		$inputStub = $this->getInputStub();
+		$outputStub = $this->getOutputStub();
+
+		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
+
+		$commandName = 'command-' . microtime( true );
+		$commandUsage = '<arg1> [<arg2>]';
+
+		$application->setCommandUsage( $commandName, $commandUsage );
+
+		$this->assertEquals( $commandUsage, $application->getCommandUsage( $commandName ) );
+	}
+
+	/**
+	 * @expectedException	OutOfBoundsException
+	 */
+	public function testGetInvalidCommandUsageThrowsException()
+	{
+		$inputStub = $this->getInputStub();
+		$outputStub = $this->getOutputStub();
+
+		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
+		$commandName = 'command-' . microtime( true );
+
+		$application->getCommandUsage( $commandName );
+	}
+
 	public function testGetName()
 	{
 		$name = 'foo-' . microtime( true );
@@ -102,6 +131,31 @@ class ApplicationTest extends TestCase
 		$application = new Application( 'foo', $version, $inputStub, $outputStub );
 
 		$this->assertEquals( $version, $application->getVersion() );
+	}
+
+	public function testHasInvalidCommandUsageReturnsFalse()
+	{
+		$inputStub = $this->getInputStub();
+		$outputStub = $this->getOutputStub();
+
+		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
+
+		$this->assertFalse( $application->hasCommandUsage( 'command' ) );
+	}
+
+	public function testHasValidCommandUsageReturnsTrue()
+	{
+		$inputStub = $this->getInputStub();
+		$outputStub = $this->getOutputStub();
+
+		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
+
+		$commandName = 'command-' . microtime( true );
+		$commandUsage = '<arg1> [<arg2>]';
+
+		$application->setCommandUsage( $commandName, $commandUsage );
+
+		$this->assertTrue( $application->hasCommandUsage( $commandName ) );
 	}
 
 	public function testInvalidCommand()

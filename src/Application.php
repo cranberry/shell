@@ -16,6 +16,11 @@ class Application
 	/**
 	 * @var	array
 	 */
+	protected $commandUsageStrings=[];
+
+	/**
+	 * @var	array
+	 */
 	protected $errorMiddlewareQueue=[];
 
 	/**
@@ -77,6 +82,24 @@ class Application
 				return Middleware\Middleware::EXIT;
 			}
 		}));
+
+	/**
+	 * Return command usage string
+	 *
+	 * @param	string	$commandName
+	 *
+	 * @throws	OutOfBoundsException	If usage string not defined
+	 *
+	 * @return	string
+	 */
+	public function getCommandUsage( string $commandName ) : string
+	{
+		if( !$this->hasCommandUsage( $commandName ) )
+		{
+			throw new \OutOfBoundsException( "Usage string not defined for command '{$commandName}'" );
+		}
+
+		return $this->commandUsageStrings[$commandName];
 	}
 
 	/**
@@ -97,6 +120,18 @@ class Application
 	public function getVersion() : string
 	{
 		return $this->version;
+	}
+
+	/**
+	 * Checks if command usage string is defined
+	 *
+	 * @param	string	$commandName
+	 *
+	 * @return	boolean
+	 */
+	public function hasCommandUsage( string $commandName ) : bool
+	{
+		return array_key_exists( $commandName, $this->commandUsageStrings );
 	}
 
 	/**
@@ -207,6 +242,20 @@ class Application
 				break;
 			}
 		}
+	}
+
+	/**
+	 * Set the usage string for a given command
+	 *
+	 * @param	string	$commandName
+	 *
+	 * @param	string	$commandUsage
+	 *
+	 * @return	void
+	 */
+	public function setCommandUsage( string $commandName, string $commandUsage )
+	{
+		$this->commandUsageStrings[$commandName] = $commandUsage;
 	}
 
 	/**
