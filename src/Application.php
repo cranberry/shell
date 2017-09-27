@@ -71,6 +71,10 @@ class Application
 		$this->input = $input;
 		$this->output = $output;
 
+		/*
+		 * Global middleware
+		 */
+
 		/* --version */
 		$this->pushMiddleware( new Middleware\Middleware( function( $input, &$output )
 		{
@@ -82,6 +86,18 @@ class Application
 				return Middleware\Middleware::EXIT;
 			}
 		}));
+
+		/*
+		 * Exception-handling middleware
+		 */
+
+		$invalidCommandMiddleware = new Middleware\Middleware( function( $input, &$output, \Exception $exception )
+		{
+			$output->write( sprintf( self::ERROR_STRING_INVALIDCOMMAND, $this->getName(), $input->getCommand() ) . PHP_EOL );
+		});
+		$invalidCommandMiddleware->setRoute( Exception\InvalidCommandException::class );
+		$this->pushErrorMiddleware( $invalidCommandMiddleware );
+	}
 
 	/**
 	 * Return command usage string
@@ -183,13 +199,6 @@ class Application
 			if( $input->hasCommand() )
 			{
 				throw new Exception\InvalidCommandException( $input->getCommand() );
-			}
-		}));
-		$this->pushErrorMiddleware( new Middleware\Middleware( function( $input, &$output, \Exception $exception )
-		{
-			if( $exception instanceof Exception\InvalidCommandException )
-			{
-				$output->write( sprintf( self::ERROR_STRING_INVALIDCOMMAND, $this->getName(), $input->getCommand() ) . PHP_EOL );
 			}
 		}));
 
