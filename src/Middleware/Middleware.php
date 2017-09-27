@@ -65,19 +65,26 @@ class Middleware implements MiddlewareInterface
 	 *
 	 * @param	string	$route
 	 *
+	 * @param	boolean	$useRegex
+	 *
 	 * @return	boolean
 	 */
-	public function matchesRoute( string $route ) : bool
+	public function matchesRoute( string $route, bool $useRegex=true ) : bool
 	{
 		if( $this->route == null )
 		{
 			return true;
 		}
 
-		$pattern = sprintf( '/%s/', $this->route );
-		$result = preg_match( $pattern, $route );
+		if( $useRegex )
+		{
+			$pattern = sprintf( '/%s/', $this->route );
+			$result = preg_match( $pattern, $route );
 
-		return $result === 1;
+			return $result === 1;
+		}
+
+		return $this->route === $route;
 	}
 
 	/**

@@ -167,4 +167,13 @@ class MiddlewareTest extends TestCase
 
 		$this->assertTrue( $middleware->matchesRoute( $route ) );
 	}
+
+	public function testMatchesRouteWithoutRegEx()
+	{
+		$middleware = new Middleware( function(){} );
+		$middleware->setRoute( Apple\Banana\Carrot::class );
+
+		$this->assertFalse( $middleware->matchesRoute( Apple\Banana\Carrot::class ) );
+		$this->assertTrue( $middleware->matchesRoute( Apple\Banana\Carrot::class, false ) );
+	}
 }

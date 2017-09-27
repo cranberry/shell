@@ -41,9 +41,11 @@ interface MiddlewareInterface
 	 *
 	 * @param	string	$route
 	 *
+	 * @param	boolean	$useRegex
+	 *
 	 * @return	boolean
 	 */
-	public function matchesRoute( string $route ) : bool;
+	public function matchesRoute( string $route, bool $useRegex=true ) : bool;
 
 	/**
 	 * Calls the callback
