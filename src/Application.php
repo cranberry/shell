@@ -92,7 +92,7 @@ class Application
 		 * Exception-handling middleware
 		 */
 
-		$invalidCommandMiddleware = new Middleware\Middleware( function( $input, &$output, \Exception $exception )
+		$invalidCommandMiddleware = new Middleware\Middleware( function( Input\InputInterface $input, Output\OutputInterface &$output, Exception\InvalidCommandException $exception )
 		{
 			$output->write( sprintf( self::ERROR_STRING_INVALIDCOMMAND, $this->getName(), $input->getCommand() ) . PHP_EOL );
 		});
@@ -203,7 +203,7 @@ class Application
 	public function run()
 	{
 		/* Add last-defense error-handling middleware */
-		$this->pushMiddleware( new Middleware\Middleware( function( $input, &$output )
+		$this->pushMiddleware( new Middleware\Middleware( function( Input\InputInterface $input, Output\OutputInterface &$output )
 		{
 			if( $input->hasCommand() )
 			{
