@@ -193,7 +193,9 @@ class Application
 			}
 		}));
 
-		/* Route and execute middleware queue */
+		/*
+		 * Route and execute middleware queue
+		 */
 		$route = '';
 
 		if( $this->input->hasCommand() )
@@ -226,8 +228,15 @@ class Application
 			}
 			catch( \Exception $exception )
 			{
+				$errorRoute = get_class( $exception );
+
 				foreach( $this->errorMiddlewareQueue as $errorMiddleware )
 				{
+					if( !$errorMiddleware->matchesRoute( $errorRoute, false ) )
+					{
+						continue;
+					}
+
 					$errorMiddleware->bindTo( $this );
 
 					$parameters = $this->middlewareParameters;
