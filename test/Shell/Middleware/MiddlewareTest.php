@@ -113,7 +113,7 @@ class MiddlewareTest extends TestCase
 		$this->assertEquals( $envTime, file_get_contents( $streamTarget ) );
 	}
 
-	public function testRunningCallbackWithNoReturnValueReturnsCONTINUE()
+	public function testRunningCallbackWithNoReturnValueReturnsEXIT()
 	{
 		$callback = function( Input\InputInterface &$input, Output\OutputInterface &$output ){};
 
@@ -123,14 +123,14 @@ class MiddlewareTest extends TestCase
 		$middleware = new Middleware( $callback );
 		$returnValue = $middleware->run( $input, $output );
 
-		$this->assertSame( Middleware::CONTINUE, $returnValue );
+		$this->assertSame( Middleware::EXIT, $returnValue );
 	}
 
-	public function testRunningCallbackWithReturnValueEXITReturnsEXIT()
+	public function testRunningCallbackWithReturnValueCONTINUEReturnsCONTINUE()
 	{
 		$callback = function( Input\InputInterface &$input, Output\OutputInterface &$output )
 		{
-			return Middleware::EXIT;
+			return Middleware::CONTINUE;
 		};
 
 		$input = new Input\Input( ['command'], [] );
@@ -139,7 +139,7 @@ class MiddlewareTest extends TestCase
 		$middleware = new Middleware( $callback );
 		$returnValue = $middleware->run( $input, $output );
 
-		$this->assertSame( Middleware::EXIT, $returnValue );
+		$this->assertSame( Middleware::CONTINUE, $returnValue );
 	}
 
 	public function testMatchesUndefinedRouteReturnsTrue()

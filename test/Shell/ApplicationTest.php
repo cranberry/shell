@@ -74,6 +74,7 @@ class ApplicationTest extends TestCase
 		$application->pushErrorMiddleware( new Middleware\Middleware( function( &$input, &$output, \Exception $exception )
 		{
 			$output->write( $this->getVersion() );
+			return Middleware\Middleware::CONTINUE;
 		}));
 
 		$application->run();
@@ -311,6 +312,7 @@ class ApplicationTest extends TestCase
 		$application->pushMiddleware( new Middleware\Middleware( function( &$input, &$output )
 		{
 			$output->write( "It's " );
+			return Middleware\Middleware::CONTINUE;
 		}));
 		$application->pushMiddleware( new Middleware\Middleware( function( &$input, &$output )
 		{
@@ -360,6 +362,7 @@ class ApplicationTest extends TestCase
 		$middleware_1 = new Middleware\Middleware( function( &$input, &$output )
 		{
 			$output->write( '1' );
+			return Middleware\Middleware::CONTINUE;
 		});
 		$middleware_1->setRoute( 'command' );
 		$application->pushMiddleware( $middleware_1 );
@@ -368,6 +371,7 @@ class ApplicationTest extends TestCase
 		$middleware_2 = new Middleware\Middleware( function( &$input, &$output )
 		{
 			$output->write( '2' );
+			return Middleware\Middleware::CONTINUE;
 		});
 		$middleware_2->setRoute( 'command subcommand' );
 		$application->pushMiddleware( $middleware_2 );
@@ -376,12 +380,12 @@ class ApplicationTest extends TestCase
 		$middleware_3 = new Middleware\Middleware( function( &$input, &$output )
 		{
 			$output->write( '3' );
-			return Middleware\Middleware::EXIT;
 		});
 		$middleware_3->setRoute( 'command( \S+)?' );
 		$application->pushMiddleware( $middleware_3 );
 
 		$application->run();
+		$this->assertTrue( file_exists( $streamTarget ) );
 		$this->assertEquals( '13', file_get_contents( $streamTarget ) );
 	}
 
@@ -466,6 +470,7 @@ class ApplicationTest extends TestCase
 		$application->unshiftMiddleware( new Middleware\Middleware( function( &$input, &$output )
 		{
 			$output->write( "It's " );
+			return Middleware\Middleware::CONTINUE;
 		}));
 
 		$application->run();

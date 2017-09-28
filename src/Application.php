@@ -86,6 +86,8 @@ class Application
 
 				return Middleware\Middleware::EXIT;
 			}
+
+			return Middleware\Middleware::CONTINUE;
 		}));
 
 		/*

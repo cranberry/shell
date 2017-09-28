@@ -108,12 +108,12 @@ class Middleware implements MiddlewareInterface
 		$arguments = array_merge( $arguments, $optionalArguments );
 
 		$returnValue = call_user_func_array( $this->callback, $arguments );
-		if( $returnValue === self::EXIT )
+		if( $returnValue === self::CONTINUE )
 		{
-			return self::EXIT;
+			return self::CONTINUE;
 		}
 
-		return self::CONTINUE;
+		return self::EXIT;
 	}
 
 	/**
