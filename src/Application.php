@@ -95,6 +95,32 @@ class Application
 			return Middleware\Middleware::CONTINUE;
 		}));
 
+		/* --help */
+		$this->pushMiddleware( new Middleware\Middleware( function( $input, &$output )
+		{
+			if( $input->hasOption( 'help' ) )
+			{
+				$usage  = sprintf( 'usage: %s [--help] [--version] <command> [<args>]', $this->getName() ) . PHP_EOL;
+				$usage .= PHP_EOL;
+				$usage .= 'Commands are:' . PHP_EOL;
+				$usage .= PHP_EOL;
+
+				foreach( $this->commandDescriptionStrings as $commandName => $commandDescription )
+				{
+					$usage .= sprintf( '   %-10s %s', $commandName, $commandDescription ) . PHP_EOL;
+				}
+
+				$usage .= PHP_EOL;
+				$usage .= sprintf( "See '%s --help <command>' to read about a specific command.", $this->getName() ) . PHP_EOL;
+
+				$output->write( $usage );
+
+				return Middleware\Middleware::EXIT;
+			}
+
+			return Middleware\Middleware::CONTINUE;
+		}));
+
 		/*
 		 * Exception-handling middleware
 		 */

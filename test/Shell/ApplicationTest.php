@@ -213,6 +213,37 @@ class ApplicationTest extends TestCase
 		$this->assertTrue( $application->hasCommandDescription( $commandName ) );
 	}
 
+	public function testHelpOptionWithoutCommandOutputsApplicationUsage()
+	{
+		$input = new Input\Input( ['cranberry','--help'], [] );
+
+		$output = new Output\Output();
+		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
+		$output->setStream( 'file', $streamTarget );
+
+		$appName = 'app-' . microtime( true );
+		$appVersion = '1.' . microtime( true );
+		$application = new Application( $appName, $appVersion, $input, $output );
+
+		$application->setCommandDescription( 'hello', 'Say hello' );
+
+		$application->run();
+
+		$appUsage = <<<USAGE
+usage: {$appName} [--help] [--version] <command> [<args>]
+
+Commands are:
+
+   hello      Say hello
+
+See '{$appName} --help <command>' to read about a specific command.
+
+USAGE;
+
+		$this->assertTrue( file_exists( $streamTarget ) );
+		$this->assertEquals( $appUsage, file_get_contents( $streamTarget ) );
+	}
+
 	public function testInvalidCommand()
 	{
 		$appName = 'app-' . microtime( true );
