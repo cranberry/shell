@@ -494,6 +494,11 @@ class ApplicationTest extends TestCase
 		$appVersion = '1.' . microtime( true );
 		$application = new Application( $appName, $appVersion, $inputStub, $output );
 
+		$application->pushMiddleware( new Middleware\Middleware( function( $input, &$output )
+		{
+			$output->write( microtime( true ) );
+		}));
+
 		$this->assertFalse( file_exists( $streamTarget ) );
 
 		$application->run();
