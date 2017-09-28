@@ -86,19 +86,7 @@ class Application
 		 * Global middleware
 		 */
 
-		/* --version */
-		$this->pushMiddleware( new Middleware\Middleware( function( $input, &$output )
-		{
-			if( $input->hasOption( 'version' ) )
-			{
-				$version = sprintf( '%s version %s', $this->getName(), $this->getVersion() );
-				$output->write( $version . PHP_EOL );
-
-				return Middleware\Middleware::EXIT;
-			}
-
-			return Middleware\Middleware::CONTINUE;
-		}));
+		$this->pushMiddleware( new Middleware\Middleware( [$this, '___versionCallback'] ));
 
 		/* --help */
 		$this->pushMiddleware( new Middleware\Middleware( function( $input, &$output )
@@ -144,6 +132,28 @@ class Application
 		});
 		$invalidCommandUsageMiddleware->setRoute( Exception\InvalidCommandUsageException::class );
 		$this->pushErrorMiddleware( $invalidCommandUsageMiddleware );
+	}
+
+	/**
+	 * Middleware callback for '--version' application option
+	 *
+	 * @param	Cranberry\Shell\Input\InputInterface	$input
+	 *
+	 * @param	Cranberry\Shell\Output\OutputInterface	$output
+	 *
+	 * @return	void
+	 */
+	public function ___versionCallback( Input\InputInterface $input, Output\OutputInterface &$output )
+	{
+		if( $input->hasOption( 'version' ) )
+		{
+			$version = sprintf( '%s version %s', $this->getName(), $this->getVersion() );
+			$output->write( $version . PHP_EOL );
+
+			return Middleware\Middleware::EXIT;
+		}
+
+		return Middleware\Middleware::CONTINUE;
 	}
 
 	/**

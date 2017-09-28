@@ -596,12 +596,23 @@ USAGE;
 		$this->assertEquals( "It's {$envTime}", file_get_contents( $streamTarget ) );
 	}
 
-	public function testVersionOption()
+	public function versionCallbackProvider()
+	{
+		return [
+			[true, Middleware\Middleware::EXIT],
+			[false, Middleware\Middleware::CONTINUE],
+		];
+	}
+
+	/**
+	 * @dataProvider	versionCallbackProvider
+	 */
+	public function testVersionCallback( $hasOption, $expectedReturnValue )
 	{
 		$inputStub = $this->getInputStub();
 		$inputStub
 			->method( 'hasOption' )
-			->willReturn( true );
+			->willReturn( $hasOption );
 
 		$output = new Output\Output();
 		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
@@ -611,16 +622,16 @@ USAGE;
 		$appVersion = '1.' . microtime( true );
 		$application = new Application( $appName, $appVersion, $inputStub, $output );
 
-		$application->pushMiddleware( new Middleware\Middleware( function( $input, &$output )
-		{
-			$output->write( microtime( true ) );
-		}));
-
 		$this->assertFalse( file_exists( $streamTarget ) );
 
-		$application->run();
+		$returnValue = $application->___versionCallback( $inputStub, $output );
 
-		$this->assertTrue( file_exists( $streamTarget ) );
-		$this->assertEquals( sprintf( '%s version %s' . PHP_EOL, $appName, $appVersion ), file_get_contents( $streamTarget ) );
+		$this->assertEquals( $expectedReturnValue, $returnValue );
+		$this->assertEquals( $hasOption, file_exists( $streamTarget ) );
+
+		if( $hasOption )
+		{
+			$this->assertEquals( sprintf( '%s version %s' . PHP_EOL, $appName, $appVersion ), file_get_contents( $streamTarget ) );
+		}
 	}
 }
