@@ -25,9 +25,9 @@ interface MiddlewareInterface
 	 *
 	 * @param	object	$object
 	 *
-	 * @return	void
+	 * @return	boolean
 	 */
-	public function bindTo( $object );
+	public function bindTo( $object ) : bool;
 
 	/**
 	 * Returns the callback

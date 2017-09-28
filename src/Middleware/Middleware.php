@@ -35,9 +35,9 @@ class Middleware implements MiddlewareInterface
 	 *
 	 * @param	object	$object
 	 *
-	 * @return	void
+	 * @return	boolean
 	 */
-	public function bindTo( $object )
+	public function bindTo( $object ) : bool
 	{
 		if( !is_object( $object ) )
 		{
@@ -45,7 +45,13 @@ class Middleware implements MiddlewareInterface
 			throw new \InvalidArgumentException( $exceptionMessage );
 		}
 
-		$this->callback = $this->callback->bindTo( $object );
+		if( is_object( $this->callback ) )
+		{
+			$this->callback = $this->callback->bindTo( $object );
+			return true;
+		}
+
+		return false;
 	}
 
 	/**

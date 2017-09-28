@@ -16,6 +16,17 @@ class MiddlewareTest extends TestCase
 	 */
 	protected static $tempPathname;
 
+	/**
+	 * Example object method callback
+	 *
+	 * @param	Cranberry\Shell\Input\InputInterface	$input
+	 *
+	 * @param	Cranberry\Shell\Output\OutputInterface	$output
+	 *
+	 * @return	void
+	 */
+	public function ___exampleCallback( Input\InputInterface $input, Output\OutputInterface &$output ){}
+
 	public function __routePatternProvider()
 	{
 		return [
@@ -70,9 +81,10 @@ class MiddlewareTest extends TestCase
 		$output = new Output\Output();
 
 		$middleware = new Middleware( $closure );
-		$middleware->bindTo( $boundObject );
+		$didBind = $middleware->bindTo( $boundObject );
 		$middleware->run( $input, $output );
 
+		$this->assertTrue( $didBind );
 		$this->assertSame( $boundObject->time, $envTime );
 	}
 
@@ -175,5 +187,14 @@ class MiddlewareTest extends TestCase
 
 		$this->assertFalse( $middleware->matchesRoute( Apple\Banana\Carrot::class ) );
 		$this->assertTrue( $middleware->matchesRoute( Apple\Banana\Carrot::class, false ) );
+	}
+
+	public function testObjectMethodCallbackIsNotBound()
+	{
+		$boundObject = new \stdClass();
+		$middleware = new Middleware( [$this, '___exampleCallback'] );
+
+		$didBind = $middleware->bindTo( $boundObject );
+		$this->assertFalse( $didBind );
 	}
 }
