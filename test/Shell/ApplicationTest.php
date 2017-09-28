@@ -141,6 +141,19 @@ class ApplicationTest extends TestCase
 		$application->getCommandUsage( $commandName );
 	}
 
+	public function testGetExitCode()
+	{
+		$inputStub = $this->getInputStub();
+		$outputStub = $this->getOutputStub();
+
+		$application = new Application( 'app', '0.1.0', $inputStub, $outputStub );
+
+		$this->assertEquals( 0, $application->getExitCode() );
+
+		$application->setExitCode( 1 );
+		$this->assertEquals( 1, $application->getExitCode() );
+	}
+
 	public function testGetName()
 	{
 		$name = 'foo-' . microtime( true );

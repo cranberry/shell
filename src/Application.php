@@ -30,6 +30,11 @@ class Application
 	protected $errorMiddlewareQueue=[];
 
 	/**
+	 * @var	int
+	 */
+	private $exitCode=0;
+
+	/**
 	 * @var	Cranberry\Shell\Input\InputInterface
 	 */
 	protected $input;
@@ -142,6 +147,16 @@ class Application
 	}
 
 	/**
+	 * Terminate execution of application
+	 *
+	 * @return	void
+	 */
+	public function exit()
+	{
+		exit( $this->exitCode );
+	}
+
+	/**
 	 * Return command description string
 	 *
 	 * @param	string	$commandName
@@ -177,6 +192,16 @@ class Application
 		}
 
 		return $this->commandUsageStrings[$commandName];
+	}
+
+	/**
+	 * Returns exit code
+	 *
+	 * @return	int
+	 */
+	public function getExitCode() : int
+	{
+		return $this->exitCode;
 	}
 
 	/**
@@ -361,6 +386,18 @@ class Application
 	public function setCommandUsage( string $commandName, string $commandUsage )
 	{
 		$this->commandUsageStrings[$commandName] = $commandUsage;
+	}
+
+	/**
+	 * Set the application exit code
+	 *
+	 * @param	int	$exitCode
+	 *
+	 * @return	void
+	 */
+	public function setExitCode( int $exitCode )
+	{
+		$this->exitCode = $exitCode;
 	}
 
 	/**
