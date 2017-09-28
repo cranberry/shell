@@ -83,6 +83,24 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( $appVersion, file_get_contents( $streamTarget ) );
 	}
 
+	public function testExceptionSetsExitCodeTo1()
+	{
+		$input = new Input\Input( ['app','command'], [] );
+		$output = $this->getOutputStub();
+
+		$application = new Application( 'app', '1.23', $input, $output );
+		$application->pushMiddleware( new Middleware\Middleware( function()
+		{
+			throw new \Exception();
+		}));
+
+		$this->assertEquals( 0, $application->getExitCode() );
+
+		$application->run();
+
+		$this->assertEquals( 1, $application->getExitCode() );
+	}
+
 	public function testGetCommandDescription()
 	{
 		$inputStub = $this->getInputStub();
@@ -270,6 +288,7 @@ USAGE;
 		$application = new Application( $appName, '1.23', $input, $output );
 		$application->run();
 
+		$this->assertEquals( 1, $application->getExitCode() );
 		$this->assertTrue( file_exists( $streamTarget ) );
 		$this->assertEquals( sprintf( Application::ERROR_STRING_INVALIDCOMMAND, $appName, $commandName ) . PHP_EOL, file_get_contents( $streamTarget ) );
 	}

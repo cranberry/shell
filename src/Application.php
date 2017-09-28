@@ -335,6 +335,9 @@ class Application
 			}
 			catch( \Exception $exception )
 			{
+				/* Terminate with exit code 1 (unless overridden by middleware) */
+				$this->setExitCode( 1 );
+
 				$errorRoute = get_class( $exception );
 
 				foreach( $this->errorMiddlewareQueue as $errorMiddleware )
