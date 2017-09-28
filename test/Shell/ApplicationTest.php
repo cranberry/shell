@@ -83,6 +83,21 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( $appVersion, file_get_contents( $streamTarget ) );
 	}
 
+	public function testGetCommandDescription()
+	{
+		$inputStub = $this->getInputStub();
+		$outputStub = $this->getOutputStub();
+
+		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
+
+		$commandName = 'command-' . microtime( true );
+		$commandDescription = 'A brief description ' . microtime( true );
+
+		$application->setCommandDescription( $commandName, $commandDescription );
+
+		$this->assertEquals( $commandDescription, $application->getCommandDescription( $commandName ) );
+	}
+
 	public function testGetCommandUsage()
 	{
 		$inputStub = $this->getInputStub();
@@ -96,6 +111,20 @@ class ApplicationTest extends TestCase
 		$application->setCommandUsage( $commandName, $commandUsage );
 
 		$this->assertEquals( $commandUsage, $application->getCommandUsage( $commandName ) );
+	}
+
+	/**
+	 * @expectedException	OutOfBoundsException
+	 */
+	public function testGetInvalidCommandDescriptionThrowsException()
+	{
+		$inputStub = $this->getInputStub();
+		$outputStub = $this->getOutputStub();
+
+		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
+		$commandName = 'command-' . microtime( true );
+
+		$application->getCommandDescription( $commandName );
 	}
 
 	/**
@@ -134,6 +163,16 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( $version, $application->getVersion() );
 	}
 
+	public function testHasInvalidCommandDescriptionReturnsFalse()
+	{
+		$inputStub = $this->getInputStub();
+		$outputStub = $this->getOutputStub();
+
+		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
+
+		$this->assertFalse( $application->hasCommandDescription( 'command' ) );
+	}
+
 	public function testHasInvalidCommandUsageReturnsFalse()
 	{
 		$inputStub = $this->getInputStub();
@@ -157,6 +196,21 @@ class ApplicationTest extends TestCase
 		$application->setCommandUsage( $commandName, $commandUsage );
 
 		$this->assertTrue( $application->hasCommandUsage( $commandName ) );
+	}
+
+	public function testHasValidCommandDescriptionReturnsTrue()
+	{
+		$inputStub = $this->getInputStub();
+		$outputStub = $this->getOutputStub();
+
+		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
+
+		$commandName = 'command-' . microtime( true );
+		$commandDescription = 'A brief description ' . microtime( true );
+
+		$application->setCommandDescription( $commandName, $commandDescription );
+
+		$this->assertTrue( $application->hasCommandDescription( $commandName ) );
 	}
 
 	public function testInvalidCommand()

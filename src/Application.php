@@ -17,6 +17,11 @@ class Application
 	/**
 	 * @var	array
 	 */
+	protected $commandDescriptionStrings=[];
+
+	/**
+	 * @var	array
+	 */
 	protected $commandUsageStrings=[];
 
 	/**
@@ -111,6 +116,25 @@ class Application
 	}
 
 	/**
+	 * Return command description string
+	 *
+	 * @param	string	$commandName
+	 *
+	 * @throws	OutOfBoundsException	If usage string not defined
+	 *
+	 * @return	string
+	 */
+	public function getCommandDescription( string $commandName ) : string
+	{
+		if( !$this->hasCommandDescription( $commandName ) )
+		{
+			throw new \OutOfBoundsException( "Description string not defined for command '{$commandName}'" );
+		}
+
+		return $this->commandDescriptionStrings[$commandName];
+	}
+
+	/**
 	 * Return command usage string
 	 *
 	 * @param	string	$commandName
@@ -147,6 +171,18 @@ class Application
 	public function getVersion() : string
 	{
 		return $this->version;
+	}
+
+	/**
+	 * Checks if command description string is defined
+	 *
+	 * @param	string	$commandName
+	 *
+	 * @return	boolean
+	 */
+	public function hasCommandDescription( string $commandName ) : bool
+	{
+		return array_key_exists( $commandName, $this->commandDescriptionStrings );
 	}
 
 	/**
@@ -271,6 +307,20 @@ class Application
 				break;
 			}
 		}
+	}
+
+	/**
+	 * Set the description string for a given command
+	 *
+	 * @param	string	$commandName
+	 *
+	 * @param	string	$commandDescription
+	 *
+	 * @return	void
+	 */
+	public function setCommandDescription( string $commandName, string $commandDescription )
+	{
+		$this->commandDescriptionStrings[$commandName] = $commandDescription;
 	}
 
 	/**
