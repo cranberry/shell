@@ -13,6 +13,7 @@ class Application
 {
 	const ERROR_STRING_INVALIDCOMMAND = "%1\$s: '%2\$s' is not a %1\$s command. See '%1\$s --help'.";
 	const ERROR_STRING_INVALIDCOMMANDUSAGE = 'usage: %s %s %s';
+	const STRING_APPVERSION = '%s version %s';
 
 	/**
 	 * @var	array
@@ -145,15 +146,13 @@ class Application
 	 */
 	public function ___versionCallback( Input\InputInterface $input, Output\OutputInterface &$output )
 	{
-		if( $input->hasOption( 'version' ) )
+		if( !$input->hasOption( 'version' ) )
 		{
-			$version = sprintf( '%s version %s', $this->getName(), $this->getVersion() );
-			$output->write( $version . PHP_EOL );
-
-			return Middleware\Middleware::EXIT;
+			return Middleware\Middleware::CONTINUE;
 		}
 
-		return Middleware\Middleware::CONTINUE;
+		$version = sprintf( self::STRING_APPVERSION, $this->getName(), $this->getVersion() );
+		$output->write( $version . PHP_EOL );
 	}
 
 	/**

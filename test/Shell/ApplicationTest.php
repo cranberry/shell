@@ -55,6 +55,14 @@ class ApplicationTest extends TestCase
 		return $inputStub;
 	}
 
+	public function optionCallbackProvider()
+	{
+		return [
+			[true, null],
+			[false, Middleware\Middleware::CONTINUE],
+		];
+	}
+
 	public function testErrorMiddlewareIsBoundToApplication()
 	{
 		$inputStub = $this->getInputStub();
@@ -596,16 +604,8 @@ USAGE;
 		$this->assertEquals( "It's {$envTime}", file_get_contents( $streamTarget ) );
 	}
 
-	public function versionCallbackProvider()
-	{
-		return [
-			[true, Middleware\Middleware::EXIT],
-			[false, Middleware\Middleware::CONTINUE],
-		];
-	}
-
 	/**
-	 * @dataProvider	versionCallbackProvider
+	 * @dataProvider	optionCallbackProvider
 	 */
 	public function testVersionCallback( $hasOption, $expectedReturnValue )
 	{
@@ -631,7 +631,7 @@ USAGE;
 
 		if( $hasOption )
 		{
-			$this->assertEquals( sprintf( '%s version %s' . PHP_EOL, $appName, $appVersion ), file_get_contents( $streamTarget ) );
+			$this->assertEquals( sprintf( Application::STRING_APPVERSION . PHP_EOL, $appName, $appVersion ), file_get_contents( $streamTarget ) );
 		}
 	}
 }
