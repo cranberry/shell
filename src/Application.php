@@ -128,6 +128,8 @@ class Application
 		}
 
 		$commandDescriptions = '';
+
+		ksort( $this->commandDescriptionStrings );
 		foreach( $this->commandDescriptionStrings as $commandName => $commandDescription )
 		{
 			$commandDescriptions .= sprintf( '   %-10s %s', $commandName, $commandDescription ) . PHP_EOL;

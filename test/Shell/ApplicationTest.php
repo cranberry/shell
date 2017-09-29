@@ -289,12 +289,15 @@ class ApplicationTest extends TestCase
 		$appVersion = '1.' . microtime( true );
 		$application = new Application( $appName, $appVersion, $input, $output );
 
-		$application->setCommandDescription( 'hello', 'Say hello' );
 		$application->setCommandDescription( 'world', 'Say world' );
+		$application->setCommandDescription( 'hello', 'Say hello' );
+
+		/* Should automatically sort by command name */
+		$expectedCommandDescriptions = "   hello      Say hello\n   world      Say world\n";
 
 		$application->run();
 
-		$appUsage = sprintf( Application::STRING_APPUSAGE, $appName, '[--help] [--version]', "   hello      Say hello\n   world      Say world\n" ) . PHP_EOL;
+		$appUsage = sprintf( Application::STRING_APPUSAGE, $appName, '[--help] [--version]', $expectedCommandDescriptions ) . PHP_EOL;
 
 		$this->assertTrue( file_exists( $streamTarget ) );
 		$this->assertEquals( $appUsage, file_get_contents( $streamTarget ) );
