@@ -109,6 +109,24 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( 1, $application->getExitCode() );
 	}
 
+	public function testGetApplicationUsage()
+	{
+		$input = $this->getInputStub();
+		$output = $this->getOutputStub();
+
+		$appName = 'app-' . microtime( true );
+		$application = new Application( $appName, '1.23', $input, $output );
+
+		$application->setCommandDescription( 'world', 'Say world' );
+		$application->setCommandDescription( 'hello', 'Say hello' );
+
+		/* Should automatically sort by command name */
+		$expectedCommandDescriptions = "   hello      Say hello\n   world      Say world\n";
+		$appUsage = sprintf( Application::STRING_APPUSAGE, $appName, '[--help] [--version]', $expectedCommandDescriptions );
+
+		$this->assertEquals( $appUsage, $application->getApplicationUsage() );
+	}
+
 	public function testGetCommandDescription()
 	{
 		$inputStub = $this->getInputStub();
@@ -292,12 +310,9 @@ class ApplicationTest extends TestCase
 		$application->setCommandDescription( 'world', 'Say world' );
 		$application->setCommandDescription( 'hello', 'Say hello' );
 
-		/* Should automatically sort by command name */
-		$expectedCommandDescriptions = "   hello      Say hello\n   world      Say world\n";
-
 		$application->run();
 
-		$appUsage = sprintf( Application::STRING_APPUSAGE, $appName, '[--help] [--version]', $expectedCommandDescriptions ) . PHP_EOL;
+		$appUsage = $application->getApplicationUsage() . PHP_EOL;
 
 		$this->assertTrue( file_exists( $streamTarget ) );
 		$this->assertEquals( $appUsage, file_get_contents( $streamTarget ) );

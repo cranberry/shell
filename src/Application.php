@@ -127,15 +127,8 @@ class Application
 			return Middleware\Middleware::CONTINUE;
 		}
 
-		$commandDescriptions = '';
-
-		ksort( $this->commandDescriptionStrings );
-		foreach( $this->commandDescriptionStrings as $commandName => $commandDescription )
-		{
-			$commandDescriptions .= sprintf( '   %-10s %s', $commandName, $commandDescription ) . PHP_EOL;
-		}
-
-		$output->write( sprintf( self::STRING_APPUSAGE, $this->getName(), '[--help] [--version]', $commandDescriptions ) . PHP_EOL );
+		$usage = $this->getApplicationUsage();
+		$output->write( $usage . PHP_EOL );
 	}
 
 	/**
@@ -166,6 +159,24 @@ class Application
 	public function exit()
 	{
 		exit( $this->exitCode );
+	}
+
+	/**
+	 * Return application usage string
+	 *
+	 * @return	string
+	 */
+	public function getApplicationUsage() : string
+	{
+		$commandDescriptions = '';
+
+		ksort( $this->commandDescriptionStrings );
+		foreach( $this->commandDescriptionStrings as $commandName => $commandDescription )
+		{
+			$commandDescriptions .= sprintf( '   %-10s %s', $commandName, $commandDescription ) . PHP_EOL;
+		}
+
+		return sprintf( self::STRING_APPUSAGE, $this->getName(), '[--help] [--version]', $commandDescriptions );
 	}
 
 	/**
