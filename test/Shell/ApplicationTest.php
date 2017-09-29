@@ -252,6 +252,31 @@ class ApplicationTest extends TestCase
 		$this->assertTrue( $application->hasCommandDescription( $commandName ) );
 	}
 
+	/**
+	 * @dataProvider	optionCallbackProvider
+	 */
+	public function testHelpCallback( $hasOption, $expectedReturnValue )
+	{
+		$inputStub = $this->getInputStub();
+		$inputStub
+			->method( 'hasOption' )
+			->willReturn( $hasOption );
+
+		$output = new Output\Output();
+		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
+		$output->setStream( 'file', $streamTarget );
+
+		$appName = 'app-' . microtime( true );
+		$application = new Application( $appName, '1.23', $inputStub, $output );
+
+		$this->assertFalse( file_exists( $streamTarget ) );
+
+		$returnValue = $application->___helpCallback( $inputStub, $output );
+
+		$this->assertEquals( $expectedReturnValue, $returnValue );
+		$this->assertEquals( $hasOption, file_exists( $streamTarget ) );
+	}
+
 	public function testHelpOptionWithoutCommandOutputsApplicationUsage()
 	{
 		$input = new Input\Input( ['cranberry','--help'], [] );
@@ -265,19 +290,11 @@ class ApplicationTest extends TestCase
 		$application = new Application( $appName, $appVersion, $input, $output );
 
 		$application->setCommandDescription( 'hello', 'Say hello' );
+		$application->setCommandDescription( 'world', 'Say world' );
 
 		$application->run();
 
-		$appUsage = <<<USAGE
-usage: {$appName} [--help] [--version] <command> [<args>]
-
-Commands are:
-
-   hello      Say hello
-
-See '{$appName} --help <command>' to read about a specific command.
-
-USAGE;
+		$appUsage = sprintf( Application::STRING_APPUSAGE, $appName, '[--help] [--version]', "   hello      Say hello\n   world      Say world\n" ) . PHP_EOL;
 
 		$this->assertTrue( file_exists( $streamTarget ) );
 		$this->assertEquals( $appUsage, file_get_contents( $streamTarget ) );

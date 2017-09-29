@@ -13,6 +13,7 @@ class Application
 {
 	const ERROR_STRING_INVALIDCOMMAND = "%1\$s: '%2\$s' is not a %1\$s command. See '%1\$s --help'.";
 	const ERROR_STRING_INVALIDCOMMANDUSAGE = 'usage: %s %s %s';
+	const STRING_APPUSAGE = "usage: %1\$s %2\$s <command> [<args>]\n\nCommands are:\n%3\$s\nSee '%1\$s --help <command>' to read about a specific command.";
 	const STRING_APPVERSION = '%s version %s';
 
 	/**
@@ -87,33 +88,8 @@ class Application
 		 * Global middleware
 		 */
 
+		$this->pushMiddleware( new Middleware\Middleware( [$this, '___helpCallback'] ) );
 		$this->pushMiddleware( new Middleware\Middleware( [$this, '___versionCallback'] ));
-
-		/* --help */
-		$this->pushMiddleware( new Middleware\Middleware( function( $input, &$output )
-		{
-			if( $input->hasOption( 'help' ) )
-			{
-				$usage  = sprintf( 'usage: %s [--help] [--version] <command> [<args>]', $this->getName() ) . PHP_EOL;
-				$usage .= PHP_EOL;
-				$usage .= 'Commands are:' . PHP_EOL;
-				$usage .= PHP_EOL;
-
-				foreach( $this->commandDescriptionStrings as $commandName => $commandDescription )
-				{
-					$usage .= sprintf( '   %-10s %s', $commandName, $commandDescription ) . PHP_EOL;
-				}
-
-				$usage .= PHP_EOL;
-				$usage .= sprintf( "See '%s --help <command>' to read about a specific command.", $this->getName() ) . PHP_EOL;
-
-				$output->write( $usage );
-
-				return Middleware\Middleware::EXIT;
-			}
-
-			return Middleware\Middleware::CONTINUE;
-		}));
 
 		/*
 		 * Exception-handling middleware
@@ -133,6 +109,31 @@ class Application
 		});
 		$invalidCommandUsageMiddleware->setRoute( Exception\InvalidCommandUsageException::class );
 		$this->pushErrorMiddleware( $invalidCommandUsageMiddleware );
+	}
+
+	/**
+	 * Middleware callback for '--help' application option
+	 *
+	 * @param	Cranberry\Shell\Input\InputInterface	$input
+	 *
+	 * @param	Cranberry\Shell\Output\OutputInterface	$output
+	 *
+	 * @return	void
+	 */
+	public function ___helpCallback( Input\InputInterface $input, Output\OutputInterface &$output )
+	{
+		if( !$input->hasOption( 'help' ) )
+		{
+			return Middleware\Middleware::CONTINUE;
+		}
+
+		$commandDescriptions = '';
+		foreach( $this->commandDescriptionStrings as $commandName => $commandDescription )
+		{
+			$commandDescriptions .= sprintf( '   %-10s %s', $commandName, $commandDescription ) . PHP_EOL;
+		}
+
+		$output->write( sprintf( self::STRING_APPUSAGE, $this->getName(), '[--help] [--version]', $commandDescriptions ) . PHP_EOL );
 	}
 
 	/**
