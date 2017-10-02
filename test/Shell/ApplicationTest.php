@@ -367,6 +367,40 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( sprintf( Application::ERROR_STRING_INVALIDCOMMAND, $appName, $commandName ) . PHP_EOL, file_get_contents( $streamTarget ) );
 	}
 
+	public function testInvalidCommandUsageCallback()
+	{
+		$commandName = 'command-' . microtime( true );
+		$commandUsage = 'usage-' . microtime( true );
+
+		$inputStub = $this->getInputStub();
+		$inputStub
+			->method( 'getCommand' )
+			->willReturn( $commandName );
+
+		$output = new Output\Output();
+		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
+		$output->setStream( 'file', $streamTarget );
+
+		$appName = 'app-' . microtime( true );
+		$application = new Application( $appName, '1.23', $inputStub, $output );
+
+		$application->setCommandUsage( $commandName, $commandUsage );
+
+		$this->assertFalse( file_exists( $streamTarget ) );
+
+		$exceptionStub = $this
+			->getMockBuilder( Exception\InvalidCommandUsageException::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$returnValue = $application->___invalidCommandUsageCallback( $inputStub, $output, $exceptionStub );
+
+		$this->assertEquals( null, $returnValue );
+		$this->assertTrue( file_exists( $streamTarget ) );
+
+		$this->assertEquals( sprintf( Application::ERROR_STRING_INVALIDCOMMANDUSAGE, $appName, $commandName, $commandUsage ) . PHP_EOL, file_get_contents( $streamTarget ) );
+	}
+
 	public function testInvalidCommandUsage()
 	{
 		$appName = 'app-' . microtime( true );

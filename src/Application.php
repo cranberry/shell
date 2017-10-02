@@ -145,6 +145,23 @@ class Application
 	}
 
 	/**
+	 * Error handling middleware callback for invalid command usage
+	 *
+	 * @param	Cranberry\Shell\Input\InputInterface	$input
+	 *
+	 * @param	Cranberry\Shell\Output\OutputInterface	$output
+	 *
+	 * @param	Cranberry\Shell\Exception\InvalidCommandException	$exception
+	 *
+	 * @return	void
+	 */
+	public function ___invalidCommandUsageCallback( Input\InputInterface $input, Output\OutputInterface &$output, Exception\InvalidCommandUsageException $exception )
+	{
+		$commandName = $input->getCommand();
+		$output->write( sprintf( self::ERROR_STRING_INVALIDCOMMANDUSAGE, $this->getName(), $commandName, $this->getCommandUsage( $commandName ) ) . PHP_EOL );
+	}
+
+	/**
 	 * Middleware callback for '--version' application option
 	 *
 	 * @param	Cranberry\Shell\Input\InputInterface	$input
