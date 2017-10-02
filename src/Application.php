@@ -95,10 +95,7 @@ class Application
 		 * Exception-handling middleware
 		 */
 
-		$invalidCommandMiddleware = new Middleware\Middleware( function( Input\InputInterface $input, Output\OutputInterface &$output, Exception\InvalidCommandException $exception )
-		{
-			$output->write( sprintf( self::ERROR_STRING_INVALIDCOMMAND, $this->getName(), $input->getCommand() ) . PHP_EOL );
-		});
+		$invalidCommandMiddleware = new Middleware\Middleware( [$this, '___invalidCommandCallback'] );
 		$invalidCommandMiddleware->setRoute( Exception\InvalidCommandException::class );
 		$this->pushErrorMiddleware( $invalidCommandMiddleware );
 
@@ -129,6 +126,22 @@ class Application
 
 		$usage = $this->getApplicationUsage();
 		$output->write( $usage . PHP_EOL );
+	}
+
+	/**
+	 * Error handling middleware callback for invalid command
+	 *
+	 * @param	Cranberry\Shell\Input\InputInterface	$input
+	 *
+	 * @param	Cranberry\Shell\Output\OutputInterface	$output
+	 *
+	 * @param	Cranberry\Shell\Exception\InvalidCommandException	$exception
+	 *
+	 * @return	void
+	 */
+	public function ___invalidCommandCallback( Input\InputInterface $input, Output\OutputInterface &$output, Exception\InvalidCommandException $exception )
+	{
+		$output->write( sprintf( self::ERROR_STRING_INVALIDCOMMAND, $this->getName(), $input->getCommand() ) . PHP_EOL );
 	}
 
 	/**

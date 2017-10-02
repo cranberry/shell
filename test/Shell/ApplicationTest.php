@@ -336,6 +336,37 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( sprintf( Application::ERROR_STRING_INVALIDCOMMAND, $appName, $commandName ) . PHP_EOL, file_get_contents( $streamTarget ) );
 	}
 
+	public function testInvalidCommandCallback()
+	{
+		$commandName = 'command-' . microtime( true );
+
+		$inputStub = $this->getInputStub();
+		$inputStub
+			->method( 'getCommand' )
+			->willReturn( $commandName );
+
+		$output = new Output\Output();
+		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
+		$output->setStream( 'file', $streamTarget );
+
+		$appName = 'app-' . microtime( true );
+		$application = new Application( $appName, '1.23', $inputStub, $output );
+
+		$this->assertFalse( file_exists( $streamTarget ) );
+
+		$exceptionStub = $this
+			->getMockBuilder( Exception\InvalidCommandException::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$returnValue = $application->___invalidCommandCallback( $inputStub, $output, $exceptionStub );
+
+		$this->assertEquals( null, $returnValue );
+		$this->assertTrue( file_exists( $streamTarget ) );
+
+		$this->assertEquals( sprintf( Application::ERROR_STRING_INVALIDCOMMAND, $appName, $commandName ) . PHP_EOL, file_get_contents( $streamTarget ) );
+	}
+
 	public function testInvalidCommandUsage()
 	{
 		$appName = 'app-' . microtime( true );
