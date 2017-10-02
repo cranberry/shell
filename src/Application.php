@@ -87,25 +87,14 @@ class Application
 		/*
 		 * Global middleware
 		 */
-
 		$this->pushMiddleware( new Middleware\Middleware( [$this, '___helpCallback'] ) );
-		$this->pushMiddleware( new Middleware\Middleware( [$this, '___versionCallback'] ));
+		$this->pushMiddleware( new Middleware\Middleware( [$this, '___versionCallback'] ) );
 
 		/*
 		 * Exception-handling middleware
 		 */
-
-		$invalidCommandMiddleware = new Middleware\Middleware( [$this, '___invalidCommandCallback'] );
-		$invalidCommandMiddleware->setRoute( Exception\InvalidCommandException::class );
-		$this->pushErrorMiddleware( $invalidCommandMiddleware );
-
-		$invalidCommandUsageMiddleware = new Middleware\Middleware( function( Input\InputInterface $input, Output\OutputInterface &$output, Exception\InvalidCommandUsageException $exception )
-		{
-			$commandName = $input->getCommand();
-			$output->write( sprintf( self::ERROR_STRING_INVALIDCOMMANDUSAGE, $this->getName(), $commandName, $this->getCommandUsage( $commandName ) ) . PHP_EOL );
-		});
-		$invalidCommandUsageMiddleware->setRoute( Exception\InvalidCommandUsageException::class );
-		$this->pushErrorMiddleware( $invalidCommandUsageMiddleware );
+		$this->pushErrorMiddleware( new Middleware\Middleware( [$this, '___invalidCommandCallback'], Exception\InvalidCommandException::class ) );
+		$this->pushErrorMiddleware( new Middleware\Middleware( [$this, '___invalidCommandUsageCallback'], Exception\InvalidCommandUsageException::class ) );
 	}
 
 	/**
