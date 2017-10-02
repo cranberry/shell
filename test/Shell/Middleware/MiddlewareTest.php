@@ -56,17 +56,6 @@ class MiddlewareTest extends TestCase
 		}
 	}
 
-	/**
-	 * @expectedException	InvalidArgumentException
-	 */
-	public function testPassingNonObjectToBindToThrowsException()
-	{
-		$middleware = new Middleware( function(){} );
-
-		$nonObject = [];
-		$middleware->bindTo( $nonObject );
-	}
-
 	public function testBindToObject()
 	{
 		$closure = function( Input\InputInterface &$input, Output\OutputInterface &$output )
@@ -97,6 +86,61 @@ class MiddlewareTest extends TestCase
 
 		$middleware = new Middleware( $closure );
 		$this->assertSame( $closure, $middleware->getCallback() );
+	}
+
+	/**
+	 * @dataProvider	__routePatternProvider
+	 */
+	public function testMatchMatchingRouteReturnsTrue( $pattern, $route )
+	{
+		$middleware = new Middleware( function(){} );
+		$middleware->setRoute( $pattern );
+
+		$this->assertTrue( $middleware->matchesRoute( $route ) );
+	}
+
+	public function testMatchMismatchedRouteReturnsFalse()
+	{
+		$middleware = new Middleware( function(){} );
+		$middleware->setRoute( '[show|ls]' );
+
+		$this->assertFalse( $middleware->matchesRoute( 'add' ) );
+	}
+
+	public function testMatchesRouteWithoutRegEx()
+	{
+		$middleware = new Middleware( function(){} );
+		$middleware->setRoute( Apple\Banana\Carrot::class );
+
+		$this->assertFalse( $middleware->matchesRoute( Apple\Banana\Carrot::class ) );
+		$this->assertTrue( $middleware->matchesRoute( Apple\Banana\Carrot::class, false ) );
+	}
+
+	public function testMatchesUndefinedRouteReturnsTrue()
+	{
+		$middleware = new Middleware( function(){} );
+
+		$this->assertTrue( $middleware->matchesRoute( 'foo' ) );
+	}
+
+	public function testObjectMethodCallbackIsNotBound()
+	{
+		$boundObject = new \stdClass();
+		$middleware = new Middleware( [$this, '___exampleCallback'] );
+
+		$didBind = $middleware->bindTo( $boundObject );
+		$this->assertFalse( $didBind );
+	}
+
+	/**
+	 * @expectedException	InvalidArgumentException
+	 */
+	public function testPassingNonObjectToBindToThrowsException()
+	{
+		$middleware = new Middleware( function(){} );
+
+		$nonObject = [];
+		$middleware->bindTo( $nonObject );
 	}
 
 	public function testRunPassesDefaultArgumentsByReference()
@@ -152,49 +196,5 @@ class MiddlewareTest extends TestCase
 		$returnValue = $middleware->run( $input, $output );
 
 		$this->assertSame( Middleware::CONTINUE, $returnValue );
-	}
-
-	public function testMatchesUndefinedRouteReturnsTrue()
-	{
-		$middleware = new Middleware( function(){} );
-
-		$this->assertTrue( $middleware->matchesRoute( 'foo' ) );
-	}
-
-	public function testMatchMismatchedRouteReturnsFalse()
-	{
-		$middleware = new Middleware( function(){} );
-		$middleware->setRoute( '[show|ls]' );
-
-		$this->assertFalse( $middleware->matchesRoute( 'add' ) );
-	}
-
-	/**
-	 * @dataProvider	__routePatternProvider
-	 */
-	public function testMatchMatchingRouteReturnsTrue( $pattern, $route )
-	{
-		$middleware = new Middleware( function(){} );
-		$middleware->setRoute( $pattern );
-
-		$this->assertTrue( $middleware->matchesRoute( $route ) );
-	}
-
-	public function testMatchesRouteWithoutRegEx()
-	{
-		$middleware = new Middleware( function(){} );
-		$middleware->setRoute( Apple\Banana\Carrot::class );
-
-		$this->assertFalse( $middleware->matchesRoute( Apple\Banana\Carrot::class ) );
-		$this->assertTrue( $middleware->matchesRoute( Apple\Banana\Carrot::class, false ) );
-	}
-
-	public function testObjectMethodCallbackIsNotBound()
-	{
-		$boundObject = new \stdClass();
-		$middleware = new Middleware( [$this, '___exampleCallback'] );
-
-		$didBind = $middleware->bindTo( $boundObject );
-		$this->assertFalse( $didBind );
 	}
 }
