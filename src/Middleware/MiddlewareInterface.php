@@ -16,9 +16,11 @@ interface MiddlewareInterface
 	/**
 	 * @param	Callable	$callback
 	 *
+	 * @param	string		$route
+	 *
 	 * @return	void
 	 */
-	public function __construct( Callable $callback );
+	public function __construct( Callable $callback, string $route=null );
 
 	/**
 	 * Binds the callback to a new object and scope

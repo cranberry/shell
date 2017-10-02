@@ -23,11 +23,18 @@ class Middleware implements MiddlewareInterface
 	/**
 	 * @param	Callable	$callback
 	 *
+	 * @param	string		$route
+	 *
 	 * @return	void
 	 */
-	public function __construct( Callable $callback )
+	public function __construct( Callable $callback, string $route=null )
 	{
 		$this->callback = $callback;
+
+		if( $route != null )
+		{
+			$this->setRoute( $route );
+		}
 	}
 
 	/**

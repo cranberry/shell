@@ -30,8 +30,8 @@ class MiddlewareTest extends TestCase
 	public function __routePatternProvider()
 	{
 		return [
-			['[show|ls]', 'ls'],					// aliases
-			['[show|ls]', 'show'],					// aliases
+			['(show|ls)', 'ls'],					// aliases
+			['(show|ls)', 'show'],					// aliases
 			['queue( \S+)?', 'queue'],				// optional argument
 			['queue( \S+)?', 'queue shuffle'],		// optional argument
 			['queue \S+', 'queue shuffle'],			// required argument
@@ -130,6 +130,17 @@ class MiddlewareTest extends TestCase
 
 		$didBind = $middleware->bindTo( $boundObject );
 		$this->assertFalse( $didBind );
+	}
+
+	/**
+	 * @dataProvider	__routePatternProvider
+	 */
+	public function testOptionalConstructorArgumentSetsRoute( $pattern, $route )
+	{
+		$middleware = new Middleware( function(){}, $pattern );
+
+		$this->assertTrue( $middleware->matchesRoute( $route ) );
+		$this->assertFalse( $middleware->matchesRoute( 'foo-' . microtime( true ) ) );
 	}
 
 	/**
