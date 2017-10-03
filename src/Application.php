@@ -113,7 +113,16 @@ class Application
 			return Middleware\Middleware::CONTINUE;
 		}
 
-		$usage = $this->getApplicationUsage();
+		if( $input->hasCommand() )
+		{
+			$commandName = $input->getCommand();
+			$usage = sprintf( self::STRING_COMMANDUSAGE, $this->getName(), $commandName, $this->getCommandUsage( $commandName ) );
+		}
+		else
+		{
+			$usage = $this->getApplicationUsage();
+		}
+
 		$output->write( $usage . PHP_EOL );
 	}
 

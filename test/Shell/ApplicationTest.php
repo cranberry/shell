@@ -299,6 +299,33 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( $hasOption, file_exists( $streamTarget ) );
 	}
 
+	public function testHelpCallbackWithCommandOutputsCommandUsage()
+	{
+		$appName = 'app-' . microtime( true );
+		$commandName = 'command-' . microtime( true );
+		$commandUsage = 'usage-' . microtime( true );
+
+		$input = new Input\Input( [$appName, '--help', $commandName], [] );
+
+		$output = new Output\Output();
+		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
+		$output->setStream( 'file', $streamTarget );
+
+		$application = new Application( $appName, '1.23', $input, $output );
+		$application->setCommandUsage( $commandName, $commandUsage );
+
+		$this->assertFalse( file_exists( $streamTarget ) );
+
+		$returnValue = $application->___helpCallback( $input, $output );
+
+		$this->assertEquals( null, $returnValue );
+		$this->assertTrue( file_exists( $streamTarget ) );
+
+		$expectedUsage = sprintf( Application::STRING_COMMANDUSAGE, $appName, $commandName, $commandUsage ) . PHP_EOL;
+		$actualUsage = file_get_contents( $streamTarget );
+		$this->assertEquals( $expectedUsage, $actualUsage );
+	}
+
 	public function testHelpOptionWithoutCommandOutputsApplicationUsage()
 	{
 		$input = new Input\Input( ['cranberry','--help'], [] );
