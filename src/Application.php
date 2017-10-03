@@ -117,7 +117,16 @@ class Application
 		if( $input->hasCommand() )
 		{
 			$commandName = $input->getCommand();
-			$usage = sprintf( self::STRING_COMMANDUSAGE, $this->getName(), $commandName, $this->getCommandUsage( $commandName ) );
+
+			if( $this->hasCommandUsage( $commandName ) )
+			{
+				$usage = sprintf( self::STRING_COMMANDUSAGE, $this->getName(), $commandName, $this->getCommandUsage( $commandName ) );
+			}
+			/* User requesting usage of non-existent command */
+			else
+			{
+				throw new Exception\InvalidCommandException();
+			}
 		}
 		else
 		{

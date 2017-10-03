@@ -326,6 +326,22 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( $expectedUsage, $actualUsage );
 	}
 
+	/**
+	 * @expectedException	Cranberry\Shell\Exception\InvalidCommandException
+	 */
+	public function testHelpCallbackWithInvalidCommandThrowsInvalidCommandException()
+	{
+		$appName = 'app-' . microtime( true );
+		$commandName = 'command-' . microtime( true );
+
+		$input = new Input\Input( [$appName, '--help', $commandName], [] );
+		$outputStub = $this->getOutputStub();
+
+		$application = new Application( $appName, '1.23', $input, $outputStub );
+
+		$returnValue = $application->___helpCallback( $input, $outputStub );
+	}
+
 	public function testHelpOptionWithoutCommandOutputsApplicationUsage()
 	{
 		$input = new Input\Input( ['cranberry','--help'], [] );
