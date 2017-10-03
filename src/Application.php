@@ -372,13 +372,19 @@ class Application
 	 */
 	public function run()
 	{
-		/* Add last-defense error-handling middleware */
+		/* Add last-in-line middleware to handle invalid commands */
 		$this->pushMiddleware( new Middleware\Middleware( function( Input\InputInterface $input, Output\OutputInterface &$output )
 		{
 			if( $input->hasCommand() )
 			{
 				throw new Exception\InvalidCommandException( $input->getCommand() );
 			}
+		}));
+
+		/* Rethrow any un-routed exceptions */
+		$this->pushErrorMiddleware( new Middleware\Middleware( function( Input\InputInterface $input, Output\OutputInterface &$output, \Exception $exception )
+		{
+			throw $exception;
 		}));
 
 		$middlewareParameters = $this->middlewareParameters;

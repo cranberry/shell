@@ -82,7 +82,6 @@ class ApplicationTest extends TestCase
 		$application->pushErrorMiddleware( new Middleware\Middleware( function( &$input, &$output, \Exception $exception )
 		{
 			$output->write( $this->getVersion() );
-			return Middleware\Middleware::CONTINUE;
 		}));
 
 		$application->run();
@@ -104,9 +103,14 @@ class ApplicationTest extends TestCase
 
 		$this->assertEquals( 0, $application->getExitCode() );
 
-		$application->run();
-
-		$this->assertEquals( 1, $application->getExitCode() );
+		try
+		{
+			$application->run();
+		}
+		catch( \Exception $e )
+		{
+			$this->assertEquals( 1, $application->getExitCode() );
+		}
 	}
 
 	public function testGetApplicationUsage()
@@ -513,7 +517,6 @@ class ApplicationTest extends TestCase
 		$application->pushErrorMiddleware( new Middleware\Middleware( function( &$input, &$output, \Exception $exception )
 		{
 			$output->write( ' occurred: ' . $exception->getMessage() );
-			return Middleware\Middleware::CONTINUE;
 		}));
 
 		$application->run();
@@ -645,6 +648,25 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( 'HELLO', file_get_contents( $streamTarget ) );
 	}
 
+	/**
+	 * @expectedException		Exception
+	 * @expectedExceptionCode	1234
+	 */
+	public function testUnroutedExceptionIsRethrown()
+	{
+		$inputStub = $this->getInputStub();
+		$outputStub = $this->getOutputStub();
+
+		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
+
+		$application->pushMiddleware( new Middleware\Middleware( function( $inputStub, $outputStub )
+		{
+			throw new \Exception( 'Invalid request', 1234 );
+		}));
+
+		$application->run();
+	}
+
 	public function testUnshiftErrorMiddlewarePrependsToBeginningOfQueue()
 	{
 		$envTime = (string) microtime( true );
@@ -667,7 +689,6 @@ class ApplicationTest extends TestCase
 		$application->pushErrorMiddleware( new Middleware\Middleware( function( &$input, &$output, \Exception $exception )
 		{
 			$output->write( ' occurred: ' . $exception->getMessage() );
-			return Middleware\Middleware::CONTINUE;
 		}));
 		$application->unshiftErrorMiddleware( new Middleware\Middleware( function( &$input, &$output, \Exception $exception )
 		{
