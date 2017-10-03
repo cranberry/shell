@@ -508,10 +508,12 @@ class ApplicationTest extends TestCase
 		$application->pushErrorMiddleware( new Middleware\Middleware( function( &$input, &$output, \Exception $exception )
 		{
 			$output->write( 'An error' );
+			return Middleware\Middleware::CONTINUE;
 		}));
 		$application->pushErrorMiddleware( new Middleware\Middleware( function( &$input, &$output, \Exception $exception )
 		{
 			$output->write( ' occurred: ' . $exception->getMessage() );
+			return Middleware\Middleware::CONTINUE;
 		}));
 
 		$application->run();
@@ -609,7 +611,10 @@ class ApplicationTest extends TestCase
 		$middleware_3->setRoute( 'command( \S+)?' );
 		$application->pushMiddleware( $middleware_3 );
 
+		$this->assertFalse( file_exists( $streamTarget ) );
+
 		$application->run();
+
 		$this->assertTrue( file_exists( $streamTarget ) );
 		$this->assertEquals( '13', file_get_contents( $streamTarget ) );
 	}
@@ -662,10 +667,12 @@ class ApplicationTest extends TestCase
 		$application->pushErrorMiddleware( new Middleware\Middleware( function( &$input, &$output, \Exception $exception )
 		{
 			$output->write( ' occurred: ' . $exception->getMessage() );
+			return Middleware\Middleware::CONTINUE;
 		}));
 		$application->unshiftErrorMiddleware( new Middleware\Middleware( function( &$input, &$output, \Exception $exception )
 		{
 			$output->write( 'An error' );
+			return Middleware\Middleware::CONTINUE;
 		}));
 
 		$application->run();

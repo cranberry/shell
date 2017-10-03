@@ -140,7 +140,7 @@ class Application
 	 *
 	 * @param	Cranberry\Shell\Output\OutputInterface	$output
 	 *
-	 * @param	Cranberry\Shell\Exception\InvalidCommandException	$exception
+	 * @param	Cranberry\Shell\Exception\InvalidCommandUsageException	$exception
 	 *
 	 * @return	void
 	 */
@@ -291,6 +291,42 @@ class Application
 	}
 
 	/**
+	 * Route and execute middleware queue
+	 *
+	 * @param	array	$middlewareQueue
+	 *
+	 * @param	string	$route
+	 *
+	 * @param	array	$middlewareParameters
+	 *
+	 * @param	boolean	$useRegex
+	 *
+	 * @return	void
+	 */
+	protected function processMiddlewareQueue( array $middlewareQueue, string $route, array $middlewareParameters, bool $useRegex )
+	{
+		array_unshift( $middlewareParameters, $this->output );
+		array_unshift( $middlewareParameters, $this->input );
+
+		foreach( $middlewareQueue as $middleware )
+		{
+			if( !$middleware->matchesRoute( $route, $useRegex ) )
+			{
+				continue;
+			}
+
+			$middleware->bindTo( $this );
+
+			$returnValue = call_user_func_array( [$middleware, 'run'], $middlewareParameters );
+
+			if( $returnValue == Middleware\MiddlewareInterface::EXIT )
+			{
+				break;
+			}
+		}
+	}
+
+	/**
 	 * Push a Middleware object onto the end of the error queue
 	 *
 	 * @param	Cranberry\Shell\Middleware\MiddlewareInterface	$middleware
@@ -329,6 +365,9 @@ class Application
 	/**
 	 * Process middleware queue
 	 *
+	 * If an exception is caught during normal middleware queue processing,
+	 * stop and switch to process the error middleware queue.
+	 *
 	 * @return	void
 	 */
 	public function run()
@@ -342,66 +381,24 @@ class Application
 			}
 		}));
 
-		/*
-		 * Route and execute middleware queue
-		 */
-		$route = '';
+		$middlewareParameters = $this->middlewareParameters;
 
-		if( $this->input->hasCommand() )
+		$route = $this->input->hasCommand() ? $this->input->getCommand() : '';
+
+		try
 		{
-			$route = $this->input->getCommand();
+			$this->processMiddlewareQueue( $this->middlewareQueue, $route, $middlewareParameters, true );
 		}
-
-		foreach( $this->middlewareQueue as $middleware )
+		catch( \Exception $exception )
 		{
-			if( !$middleware->matchesRoute( $route ) )
-			{
-				continue;
-			}
+			/* Terminate with exit code 1 (unless overridden by middleware) */
+			$this->setExitCode( 1 );
 
-			$middleware->bindTo( $this );
+			$route = get_class( $exception );
 
-			$parameters = $this->middlewareParameters;
+			array_unshift( $middlewareParameters, $exception );
 
-			array_unshift( $parameters, $this->output );
-			array_unshift( $parameters, $this->input );
-
-			try
-			{
-				$returnValue = call_user_func_array( [$middleware, 'run'], $parameters );
-
-				if( $returnValue == Middleware\MiddlewareInterface::EXIT )
-				{
-					break;
-				}
-			}
-			catch( \Exception $exception )
-			{
-				/* Terminate with exit code 1 (unless overridden by middleware) */
-				$this->setExitCode( 1 );
-
-				$errorRoute = get_class( $exception );
-
-				foreach( $this->errorMiddlewareQueue as $errorMiddleware )
-				{
-					if( !$errorMiddleware->matchesRoute( $errorRoute, false ) )
-					{
-						continue;
-					}
-
-					$errorMiddleware->bindTo( $this );
-
-					$parameters = $this->middlewareParameters;
-
-					array_unshift( $parameters, $exception );
-					array_unshift( $parameters, $this->output );
-					array_unshift( $parameters, $this->input );
-
-					call_user_func_array( [$errorMiddleware, 'run'], $parameters );
-				}
-
-				break;
-			}
+			$this->processMiddlewareQueue( $this->errorMiddlewareQueue, $route, $middlewareParameters, false );
 		}
 	}
 
