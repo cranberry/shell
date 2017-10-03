@@ -402,7 +402,7 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( null, $returnValue );
 		$this->assertTrue( file_exists( $streamTarget ) );
 
-		$this->assertEquals( sprintf( Application::ERROR_STRING_INVALIDCOMMANDUSAGE, $appName, $commandName, $commandUsage ) . PHP_EOL, file_get_contents( $streamTarget ) );
+		$this->assertEquals( sprintf( Application::STRING_COMMANDUSAGE, $appName, $commandName, $commandUsage ) . PHP_EOL, file_get_contents( $streamTarget ) );
 	}
 
 	public function testInvalidCommandUsage()
@@ -435,7 +435,7 @@ class ApplicationTest extends TestCase
 		$application->run();
 
 		$this->assertTrue( file_exists( $streamTarget ) );
-		$this->assertEquals( sprintf( Application::ERROR_STRING_INVALIDCOMMANDUSAGE, $appName, $commandName, $commandUsage ) . PHP_EOL, file_get_contents( $streamTarget ) );
+		$this->assertEquals( sprintf( Application::STRING_COMMANDUSAGE, $appName, $commandName, $commandUsage ) . PHP_EOL, file_get_contents( $streamTarget ) );
 	}
 
 	/**

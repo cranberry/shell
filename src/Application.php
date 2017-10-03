@@ -12,9 +12,9 @@ use Cranberry\Shell\Output;
 class Application
 {
 	const ERROR_STRING_INVALIDCOMMAND = "%1\$s: '%2\$s' is not a %1\$s command. See '%1\$s --help'.";
-	const ERROR_STRING_INVALIDCOMMANDUSAGE = 'usage: %s %s %s';
 	const STRING_APPUSAGE = "usage: %1\$s %2\$s <command> [<args>]\n\nCommands are:\n%3\$s\nSee '%1\$s --help <command>' to read about a specific command.";
 	const STRING_APPVERSION = '%s version %s';
+	const STRING_COMMANDUSAGE = 'usage: %s %s %s';
 
 	/**
 	 * @var	array
@@ -147,7 +147,7 @@ class Application
 	public function ___invalidCommandUsageCallback( Input\InputInterface $input, Output\OutputInterface &$output, Exception\InvalidCommandUsageException $exception )
 	{
 		$commandName = $input->getCommand();
-		$output->write( sprintf( self::ERROR_STRING_INVALIDCOMMANDUSAGE, $this->getName(), $commandName, $this->getCommandUsage( $commandName ) ) . PHP_EOL );
+		$output->write( sprintf( self::STRING_COMMANDUSAGE, $this->getName(), $commandName, $this->getCommandUsage( $commandName ) ) . PHP_EOL );
 	}
 
 	/**
