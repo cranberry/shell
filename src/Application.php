@@ -93,6 +93,7 @@ class Application
 		/*
 		 * Exception-handling middleware
 		 */
+		$this->pushErrorMiddleware( new Middleware\Middleware( [$this, '___invalidApplicationUsageCallback'], Exception\InvalidApplicationUsageException::class ) );
 		$this->pushErrorMiddleware( new Middleware\Middleware( [$this, '___invalidCommandCallback'], Exception\InvalidCommandException::class ) );
 		$this->pushErrorMiddleware( new Middleware\Middleware( [$this, '___invalidCommandUsageCallback'], Exception\InvalidCommandUsageException::class ) );
 	}
@@ -124,6 +125,22 @@ class Application
 		}
 
 		$output->write( $usage . PHP_EOL );
+	}
+
+	/**
+	 * Error handling middleware callback for invalid application usage
+	 *
+	 * @param	Cranberry\Shell\Input\InputInterface	$input
+	 *
+	 * @param	Cranberry\Shell\Output\OutputInterface	$output
+	 *
+	 * @param	Cranberry\Shell\Exception\InvalidApplicationUsageException	$exception
+	 *
+	 * @return	void
+	 */
+	public function ___invalidApplicationUsageCallback( Input\InputInterface $input, Output\OutputInterface &$output, Exception\InvalidApplicationUsageException $exception )
+	{
+		$output->write( $this->getApplicationUsage() . PHP_EOL );
 	}
 
 	/**

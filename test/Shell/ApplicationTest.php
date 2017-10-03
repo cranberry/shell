@@ -349,6 +349,35 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( $appUsage, file_get_contents( $streamTarget ) );
 	}
 
+	public function testInvalidApplicationUsageCallback()
+	{
+		$inputStub = $this->getInputStub();
+
+		$output = new Output\Output();
+		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
+		$output->setStream( 'file', $streamTarget );
+
+		$appName = 'app-' . microtime( true );
+		$application = new Application( $appName, '1.23', $inputStub, $output );
+
+		$application->setCommandDescription( 'hello', microtime( true ) );
+		$application->setCommandDescription( 'world', microtime( true ) );
+
+		$this->assertFalse( file_exists( $streamTarget ) );
+
+		$exceptionStub = $this
+			->getMockBuilder( Exception\InvalidApplicationUsageException::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$returnValue = $application->___invalidApplicationUsageCallback( $inputStub, $output, $exceptionStub );
+
+		$this->assertEquals( null, $returnValue );
+		$this->assertTrue( file_exists( $streamTarget ) );
+
+		$this->assertEquals( $application->getApplicationUsage() . PHP_EOL, file_get_contents( $streamTarget ) );
+	}
+
 	public function testInvalidCommand()
 	{
 		$appName = 'app-' . microtime( true );
