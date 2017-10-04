@@ -566,6 +566,54 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( "It's {$envTime}", $outputStub->getBuffer() );
 	}
 
+	public function testRegisterCommand()
+	{
+		$inputStub = $this->getInputStub();
+		$outputStub = $this->getOutputStub();
+
+		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
+
+		$commandName = 'command-' . microtime( true );
+		$commandDescription = 'Description of ' . $commandName;
+		$commandUsage = "{$commandName} <foo> [--bar]";
+		$commandMiddleware = new Middleware\Middleware( function( Input\InputInterface $input, Output\OutputInterface $output )
+		{
+			$output->write( 'Hello, world' );
+		});
+
+		$commandStub = $this->createMock( Command\Command::class );
+		$commandStub
+			->method( 'getDescription' )
+			->willReturn( $commandDescription );
+
+		$commandStub
+			->method( 'getMiddleware' )
+			->willReturn( [$commandMiddleware] );
+
+		$commandStub
+			->method( 'getName' )
+			->willReturn( $commandName );
+
+		$commandStub
+			->method( 'getUsage' )
+			->willReturn( $commandUsage );
+
+		$this->assertFalse( $application->hasCommandDescription( $commandName ) );
+		$this->assertFalse( $application->hasCommandUsage( $commandName ) );
+
+		$application->registerCommand( $commandStub );
+
+		$this->assertTrue( $application->hasCommandDescription( $commandName ) );
+		$this->assertEquals( $commandDescription, $application->getCommandDescription( $commandName ) );
+
+		$this->assertTrue( $application->hasCommandUsage( $commandName ) );
+		$this->assertEquals( $commandUsage, $application->getCommandUsage( $commandName ) );
+
+		$application->run();
+
+		$this->assertEquals( 'Hello, world', $outputStub->getBuffer() );
+	}
+
 	public function testRegisterMiddlewareParameter()
 	{
 		$inputStub = $this->getInputStub();

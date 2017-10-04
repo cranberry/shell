@@ -5,6 +5,7 @@
  */
 namespace Cranberry\Shell;
 
+use Cranberry\Shell\Command;
 use Cranberry\Shell\Input;
 use Cranberry\Shell\Middleware;
 use Cranberry\Shell\Output;
@@ -383,6 +384,27 @@ class Application
 	public function pushMiddleware( Middleware\MiddlewareInterface $middleware )
 	{
 		array_push( $this->middlewareQueue, $middleware );
+	}
+
+	/**
+	 * Register command description, usage strings, and middleware
+	 *
+	 * @param	Cranberry\Shell\Command\CommandInterface	$command
+	 *
+	 * @return	void
+	 */
+	public function registerCommand( Command\CommandInterface $command )
+	{
+		$commandName = $command->getName();
+
+		$this->setCommandDescription( $commandName, $command->getDescription() );
+		$this->setCommandUsage( $commandName, $command->getUsage() );
+
+		$commandMiddlewareObjects = $command->getMiddleware();
+		foreach( $commandMiddlewareObjects as $commandMiddlewareObject )
+		{
+			$this->pushMiddleware( $commandMiddlewareObject );
+		}
 	}
 
 	/**
