@@ -12,36 +12,9 @@ use PHPUnit\Framework\TestCase;
 
 class ApplicationTest extends TestCase
 {
-	/**
-	 * @var    string
-	 */
-	protected static $tempPathname;
-
-	public static function setUpBeforeClass()
-	{
-		self::$tempPathname = dirname( dirname( __DIR__ ) ) . '/fixtures/temp';
-		if( !file_exists( self::$tempPathname ) )
-		{
-			mkdir( self::$tempPathname, 0777, true );
-		}
-	}
-
-	public static function tearDownAfterClass()
-	{
-		if( file_exists( self::$tempPathname ) )
-		{
-			$command = sprintf( 'rm -r %s', self::$tempPathname );
-			exec( $command );
-		}
-	}
-
 	public function getOutputStub()
 	{
-		$outputStub = $this
-			->getMockBuilder( Output\Output::class )
-			->disableOriginalConstructor()
-			->getMock();
-
+		$outputStub = new \Cranberry\ShellTest\OutputStub();
 		return $outputStub;
 	}
 
@@ -66,13 +39,10 @@ class ApplicationTest extends TestCase
 	public function testErrorMiddlewareIsBoundToApplication()
 	{
 		$inputStub = $this->getInputStub();
-
-		$output = new Output\Output();
-		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
-		$output->setStream( 'file', $streamTarget );
+		$outputStub = $this->getOutputStub();
 
 		$appVersion = '1.' . microtime( true );
-		$application = new Application( 'foo', $appVersion, $inputStub, $output );
+		$application = new Application( 'foo', $appVersion, $inputStub, $outputStub );
 
 		$application->pushMiddleware( new Middleware\Middleware( function( &$input, &$output )
 		{
@@ -86,16 +56,15 @@ class ApplicationTest extends TestCase
 
 		$application->run();
 
-		$this->assertTrue( file_exists( $streamTarget ) );
-		$this->assertEquals( $appVersion, file_get_contents( $streamTarget ) );
+		$this->assertEquals( $appVersion, $outputStub->getBuffer() );
 	}
 
 	public function testExceptionSetsExitCodeTo1()
 	{
 		$input = new Input\Input( ['app','command'], [] );
-		$output = $this->getOutputStub();
+		$outputStub = $this->getOutputStub();
 
-		$application = new Application( 'app', '1.23', $input, $output );
+		$application = new Application( 'app', '1.23', $input, $outputStub );
 		$application->pushMiddleware( new Middleware\Middleware( function()
 		{
 			throw new \Exception();
@@ -116,10 +85,10 @@ class ApplicationTest extends TestCase
 	public function testGetApplicationUsage()
 	{
 		$input = $this->getInputStub();
-		$output = $this->getOutputStub();
+		$outputStub = $this->getOutputStub();
 
 		$appName = 'app-' . microtime( true );
-		$application = new Application( $appName, '1.23', $input, $output );
+		$application = new Application( $appName, '1.23', $input, $outputStub );
 
 		$application->setCommandDescription( 'world', 'Say world' );
 		$application->setCommandDescription( 'hello', 'Say hello' );
@@ -277,26 +246,21 @@ class ApplicationTest extends TestCase
 	/**
 	 * @dataProvider	optionCallbackProvider
 	 */
-	public function testHelpCallback( $hasOption, $expectedReturnValue )
+	public function testHelpCallbackReturnValue( $hasOption, $expectedReturnValue )
 	{
 		$inputStub = $this->getInputStub();
 		$inputStub
 			->method( 'hasOption' )
 			->willReturn( $hasOption );
 
-		$output = new Output\Output();
-		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
-		$output->setStream( 'file', $streamTarget );
+		$outputStub = $this->getOutputStub();
 
 		$appName = 'app-' . microtime( true );
-		$application = new Application( $appName, '1.23', $inputStub, $output );
+		$application = new Application( $appName, '1.23', $inputStub, $outputStub );
 
-		$this->assertFalse( file_exists( $streamTarget ) );
-
-		$returnValue = $application->___helpCallback( $inputStub, $output );
+		$returnValue = $application->___helpCallback( $inputStub, $outputStub );
 
 		$this->assertEquals( $expectedReturnValue, $returnValue );
-		$this->assertEquals( $hasOption, file_exists( $streamTarget ) );
 	}
 
 	public function testHelpCallbackWithCommandOutputsCommandUsage()
@@ -306,24 +270,17 @@ class ApplicationTest extends TestCase
 		$commandUsage = 'usage-' . microtime( true );
 
 		$input = new Input\Input( [$appName, '--help', $commandName], [] );
+		$outputStub = $this->getOutputStub();
 
-		$output = new Output\Output();
-		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
-		$output->setStream( 'file', $streamTarget );
-
-		$application = new Application( $appName, '1.23', $input, $output );
+		$application = new Application( $appName, '1.23', $input, $outputStub );
 		$application->setCommandUsage( $commandName, $commandUsage );
 
-		$this->assertFalse( file_exists( $streamTarget ) );
-
-		$returnValue = $application->___helpCallback( $input, $output );
+		$returnValue = $application->___helpCallback( $input, $outputStub );
 
 		$this->assertEquals( null, $returnValue );
-		$this->assertTrue( file_exists( $streamTarget ) );
 
 		$expectedUsage = sprintf( Application::STRING_COMMANDUSAGE, $appName, $commandName, $commandUsage ) . PHP_EOL;
-		$actualUsage = file_get_contents( $streamTarget );
-		$this->assertEquals( $expectedUsage, $actualUsage );
+		$this->assertEquals( $expectedUsage, $outputStub->getBuffer() );
 	}
 
 	/**
@@ -345,14 +302,11 @@ class ApplicationTest extends TestCase
 	public function testHelpOptionWithoutCommandOutputsApplicationUsage()
 	{
 		$input = new Input\Input( ['cranberry','--help'], [] );
-
-		$output = new Output\Output();
-		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
-		$output->setStream( 'file', $streamTarget );
+		$outputStub = $this->getOutputStub();
 
 		$appName = 'app-' . microtime( true );
 		$appVersion = '1.' . microtime( true );
-		$application = new Application( $appName, $appVersion, $input, $output );
+		$application = new Application( $appName, $appVersion, $input, $outputStub );
 
 		$application->setCommandDescription( 'world', 'Say world' );
 		$application->setCommandDescription( 'hello', 'Say hello' );
@@ -361,55 +315,44 @@ class ApplicationTest extends TestCase
 
 		$appUsage = $application->getApplicationUsage() . PHP_EOL;
 
-		$this->assertTrue( file_exists( $streamTarget ) );
-		$this->assertEquals( $appUsage, file_get_contents( $streamTarget ) );
+		$this->assertEquals( $appUsage, $outputStub->getBuffer() );
 	}
 
 	public function testInvalidApplicationUsageCallback()
 	{
 		$inputStub = $this->getInputStub();
-
-		$output = new Output\Output();
-		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
-		$output->setStream( 'file', $streamTarget );
+		$outputStub = $this->getOutputStub();
 
 		$appName = 'app-' . microtime( true );
-		$application = new Application( $appName, '1.23', $inputStub, $output );
+		$application = new Application( $appName, '1.23', $inputStub, $outputStub );
 
 		$application->setCommandDescription( 'hello', microtime( true ) );
 		$application->setCommandDescription( 'world', microtime( true ) );
-
-		$this->assertFalse( file_exists( $streamTarget ) );
 
 		$exceptionStub = $this
 			->getMockBuilder( Exception\InvalidApplicationUsageException::class )
 			->disableOriginalConstructor()
 			->getMock();
 
-		$returnValue = $application->___invalidApplicationUsageCallback( $inputStub, $output, $exceptionStub );
+		$returnValue = $application->___invalidApplicationUsageCallback( $inputStub, $outputStub, $exceptionStub );
 
 		$this->assertEquals( null, $returnValue );
-		$this->assertTrue( file_exists( $streamTarget ) );
-
-		$this->assertEquals( $application->getApplicationUsage() . PHP_EOL, file_get_contents( $streamTarget ) );
+		$this->assertEquals( $application->getApplicationUsage() . PHP_EOL, $outputStub->getBuffer() );
 	}
 
 	public function testInvalidCommand()
 	{
 		$appName = 'app-' . microtime( true );
 		$commandName = 'command-' . microtime( true );
+
 		$input = new Input\Input( [$appName, $commandName], [] );
+		$outputStub = $this->getOutputStub();
 
-		$output = new Output\Output();
-		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
-		$output->setStream( 'file', $streamTarget );
-
-		$application = new Application( $appName, '1.23', $input, $output );
+		$application = new Application( $appName, '1.23', $input, $outputStub );
 		$application->run();
 
 		$this->assertEquals( 1, $application->getExitCode() );
-		$this->assertTrue( file_exists( $streamTarget ) );
-		$this->assertEquals( sprintf( Application::ERROR_STRING_INVALIDCOMMAND, $appName, $commandName ) . PHP_EOL, file_get_contents( $streamTarget ) );
+		$this->assertEquals( sprintf( Application::ERROR_STRING_INVALIDCOMMAND, $appName, $commandName ) . PHP_EOL, $outputStub->getBuffer() );
 	}
 
 	public function testInvalidCommandCallback()
@@ -421,26 +364,20 @@ class ApplicationTest extends TestCase
 			->method( 'getCommand' )
 			->willReturn( $commandName );
 
-		$output = new Output\Output();
-		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
-		$output->setStream( 'file', $streamTarget );
+		$outputStub = $this->getOutputStub();
 
 		$appName = 'app-' . microtime( true );
-		$application = new Application( $appName, '1.23', $inputStub, $output );
-
-		$this->assertFalse( file_exists( $streamTarget ) );
+		$application = new Application( $appName, '1.23', $inputStub, $outputStub );
 
 		$exceptionStub = $this
 			->getMockBuilder( Exception\InvalidCommandException::class )
 			->disableOriginalConstructor()
 			->getMock();
 
-		$returnValue = $application->___invalidCommandCallback( $inputStub, $output, $exceptionStub );
+		$returnValue = $application->___invalidCommandCallback( $inputStub, $outputStub, $exceptionStub );
 
 		$this->assertEquals( null, $returnValue );
-		$this->assertTrue( file_exists( $streamTarget ) );
-
-		$this->assertEquals( sprintf( Application::ERROR_STRING_INVALIDCOMMAND, $appName, $commandName ) . PHP_EOL, file_get_contents( $streamTarget ) );
+		$this->assertEquals( sprintf( Application::ERROR_STRING_INVALIDCOMMAND, $appName, $commandName ) . PHP_EOL, $outputStub->getBuffer() );
 	}
 
 	public function testInvalidCommandUsageCallback()
@@ -453,28 +390,22 @@ class ApplicationTest extends TestCase
 			->method( 'getCommand' )
 			->willReturn( $commandName );
 
-		$output = new Output\Output();
-		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
-		$output->setStream( 'file', $streamTarget );
+		$outputStub = $this->getOutputStub();
 
 		$appName = 'app-' . microtime( true );
-		$application = new Application( $appName, '1.23', $inputStub, $output );
+		$application = new Application( $appName, '1.23', $inputStub, $outputStub );
 
 		$application->setCommandUsage( $commandName, $commandUsage );
-
-		$this->assertFalse( file_exists( $streamTarget ) );
 
 		$exceptionStub = $this
 			->getMockBuilder( Exception\InvalidCommandUsageException::class )
 			->disableOriginalConstructor()
 			->getMock();
 
-		$returnValue = $application->___invalidCommandUsageCallback( $inputStub, $output, $exceptionStub );
+		$returnValue = $application->___invalidCommandUsageCallback( $inputStub, $outputStub, $exceptionStub );
 
 		$this->assertEquals( null, $returnValue );
-		$this->assertTrue( file_exists( $streamTarget ) );
-
-		$this->assertEquals( sprintf( Application::STRING_COMMANDUSAGE, $appName, $commandName, $commandUsage ) . PHP_EOL, file_get_contents( $streamTarget ) );
+		$this->assertEquals( sprintf( Application::STRING_COMMANDUSAGE, $appName, $commandName, $commandUsage ) . PHP_EOL, $outputStub->getBuffer() );
 	}
 
 	public function testInvalidCommandUsage()
@@ -484,12 +415,9 @@ class ApplicationTest extends TestCase
 		$commandUsage = '<arg1> [<arg2>]';
 
 		$input = new Input\Input( [$appName, $commandName], [] );
+		$outputStub = $this->getOutputStub();
 
-		$output = new Output\Output();
-		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
-		$output->setStream( 'file', $streamTarget );
-
-		$application = new Application( $appName, '1.23', $input, $output );
+		$application = new Application( $appName, '1.23', $input, $outputStub );
 		$application->setCommandUsage( $commandName, $commandUsage );
 
 		$middleware = new Middleware\Middleware( function( $input, $output )
@@ -506,8 +434,7 @@ class ApplicationTest extends TestCase
 		$application->pushMiddleware( $middleware );
 		$application->run();
 
-		$this->assertTrue( file_exists( $streamTarget ) );
-		$this->assertEquals( sprintf( Application::STRING_COMMANDUSAGE, $appName, $commandName, $commandUsage ) . PHP_EOL, file_get_contents( $streamTarget ) );
+		$this->assertEquals( sprintf( Application::STRING_COMMANDUSAGE, $appName, $commandName, $commandUsage ) . PHP_EOL, $outputStub->getBuffer() );
 	}
 
 	/**
@@ -571,11 +498,9 @@ class ApplicationTest extends TestCase
 			->method( 'getEnv' )
 			->willReturn( $envTime );
 
-		$output = new Output\Output();
-		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
-		$output->setStream( 'file', $streamTarget );
+		$outputStub = $this->getOutputStub();
 
-		$application = new Application( 'foo', '1.23b', $inputStub, $output );
+		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
 
 		$application->pushMiddleware( new Middleware\Middleware( function( &$input, &$output )
 		{
@@ -593,8 +518,7 @@ class ApplicationTest extends TestCase
 
 		$application->run();
 
-		$this->assertTrue( file_exists( $streamTarget ) );
-		$this->assertEquals( 'An error occurred: Invalid request', file_get_contents( $streamTarget ) );
+		$this->assertEquals( 'An error occurred: Invalid request', $outputStub->getBuffer() );
 	}
 
 	public function testPushMiddlewareAppendsToEndOfQueue()
@@ -605,11 +529,9 @@ class ApplicationTest extends TestCase
 			->method( 'getEnv' )
 			->willReturn( $envTime );
 
-		$output = new Output\Output();
-		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
-		$output->setStream( 'file', $streamTarget );
+		$outputStub = $this->getOutputStub();
 
-		$application = new Application( 'foo', '1.23b', $inputStub, $output );
+		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
 
 		$application->pushMiddleware( new Middleware\Middleware( function( &$input, &$output )
 		{
@@ -623,8 +545,7 @@ class ApplicationTest extends TestCase
 
 		$application->run();
 
-		$this->assertTrue( file_exists( $streamTarget ) );
-		$this->assertEquals( "It's {$envTime}", file_get_contents( $streamTarget ) );
+		$this->assertEquals( "It's {$envTime}", $outputStub->getBuffer() );
 	}
 
 	public function testRegisterMiddlewareParameter()
@@ -653,12 +574,9 @@ class ApplicationTest extends TestCase
 	public function testRunRoutesMiddlewareWithCommandName()
 	{
 		$input = new Input\Input( ['cranberry', 'command'], [] );
+		$outputStub = $this->getOutputStub();
 
-		$output = new Output\Output();
-		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
-		$output->setStream( 'file', $streamTarget );
-
-		$application = new Application( 'foo', '1.23b', $input, $output );
+		$application = new Application( 'foo', '1.23b', $input, $outputStub );
 
 		/* 1: Command match */
 		$middleware_1 = new Middleware\Middleware( function( &$input, &$output )
@@ -686,23 +604,18 @@ class ApplicationTest extends TestCase
 		$middleware_3->setRoute( 'command( \S+)?' );
 		$application->pushMiddleware( $middleware_3 );
 
-		$this->assertFalse( file_exists( $streamTarget ) );
-
 		$application->run();
 
-		$this->assertTrue( file_exists( $streamTarget ) );
-		$this->assertEquals( '13', file_get_contents( $streamTarget ) );
+		$this->assertEquals( '13', $outputStub->getBuffer() );
 	}
 
 	public function testRunExitsWhenMiddlewareReturnsEXIT()
 	{
 		$inputStub = $this->getInputStub();
 
-		$output = new Output\Output();
-		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
-		$output->setStream( 'file', $streamTarget );
+		$outputStub = $this->getOutputStub();
 
-		$application = new Application( 'foo', '1.23b', $inputStub, $output );
+		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
 
 		$application->pushMiddleware( new Middleware\Middleware( function( &$input, &$output )
 		{
@@ -716,8 +629,7 @@ class ApplicationTest extends TestCase
 
 		$application->run();
 
-		$this->assertTrue( file_exists( $streamTarget ) );
-		$this->assertEquals( 'HELLO', file_get_contents( $streamTarget ) );
+		$this->assertEquals( 'HELLO', $outputStub->getBuffer() );
 	}
 
 	/**
@@ -747,11 +659,9 @@ class ApplicationTest extends TestCase
 			->method( 'getEnv' )
 			->willReturn( $envTime );
 
-		$output = new Output\Output();
-		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
-		$output->setStream( 'file', $streamTarget );
+		$outputStub = $this->getOutputStub();
 
-		$application = new Application( 'foo', '1.23b', $inputStub, $output );
+		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
 
 		$application->pushMiddleware( new Middleware\Middleware( function( &$input, &$output )
 		{
@@ -770,8 +680,7 @@ class ApplicationTest extends TestCase
 
 		$application->run();
 
-		$this->assertTrue( file_exists( $streamTarget ) );
-		$this->assertEquals( 'An error occurred: Invalid request', file_get_contents( $streamTarget ) );
+		$this->assertEquals( 'An error occurred: Invalid request', $outputStub->getBuffer() );
 	}
 
 	public function testUnshiftMiddlewarePrependsToBeginningOfQueue()
@@ -782,11 +691,9 @@ class ApplicationTest extends TestCase
 			->method( 'getEnv' )
 			->willReturn( $envTime );
 
-		$output = new Output\Output();
-		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
-		$output->setStream( 'file', $streamTarget );
+		$outputStub = $this->getOutputStub();
 
-		$application = new Application( 'foo', '1.23b', $inputStub, $output );
+		$application = new Application( 'foo', '1.23b', $inputStub, $outputStub );
 
 		$application->pushMiddleware( new Middleware\Middleware( function( &$input, &$output )
 		{
@@ -800,8 +707,7 @@ class ApplicationTest extends TestCase
 
 		$application->run();
 
-		$this->assertTrue( file_exists( $streamTarget ) );
-		$this->assertEquals( "It's {$envTime}", file_get_contents( $streamTarget ) );
+		$this->assertEquals( "It's {$envTime}", $outputStub->getBuffer() );
 	}
 
 	/**
@@ -814,24 +720,19 @@ class ApplicationTest extends TestCase
 			->method( 'hasOption' )
 			->willReturn( $hasOption );
 
-		$output = new Output\Output();
-		$streamTarget = sprintf( '%s/%s.txt', self::$tempPathname, microtime( true ) );
-		$output->setStream( 'file', $streamTarget );
+		$outputStub = $this->getOutputStub();
 
 		$appName = 'app-' . microtime( true );
 		$appVersion = '1.' . microtime( true );
-		$application = new Application( $appName, $appVersion, $inputStub, $output );
+		$application = new Application( $appName, $appVersion, $inputStub, $outputStub );
 
-		$this->assertFalse( file_exists( $streamTarget ) );
-
-		$returnValue = $application->___versionCallback( $inputStub, $output );
+		$returnValue = $application->___versionCallback( $inputStub, $outputStub );
 
 		$this->assertEquals( $expectedReturnValue, $returnValue );
-		$this->assertEquals( $hasOption, file_exists( $streamTarget ) );
 
 		if( $hasOption )
 		{
-			$this->assertEquals( sprintf( Application::STRING_APPVERSION . PHP_EOL, $appName, $appVersion ), file_get_contents( $streamTarget ) );
+			$this->assertEquals( sprintf( Application::STRING_APPVERSION . PHP_EOL, $appName, $appVersion ), $outputStub->getBuffer() );
 		}
 	}
 }
