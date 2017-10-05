@@ -46,4 +46,16 @@ class TestableCommand extends \Cranberry\Shell\Command\Command
 	{
 		$this->usage = $usage;
 	}
+
+	/**
+	 * Set subcommand usage
+	 *
+	 * @param	boolean	$hasSubcommand
+	 *
+	 * @return	void
+	 */
+	public function setHasSubcommand( bool $hasSubcommand )
+	{
+		$this->hasSubcommand = $hasSubcommand;
+	}
 }

@@ -614,6 +614,60 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( 'Hello, world', $outputStub->getBuffer() );
 	}
 
+	public function testRegisterCommandWithSubcommand()
+	{
+		$commandName = 'command-' . microtime( true );
+		$commandDescription = 'Description of ' . $commandName;
+		$commandUsage = 'usage-' . microtime( true );
+		$commandMiddleware = new Middleware\Middleware( function( Input\InputInterface &$input, Output\OutputInterface $output )
+		{
+			$message = sprintf( 'Hello, %s!', $input->getSubcommand() );
+			$output->write( $message );
+		} );
+		$subcommandName = 'subcommand-' . microtime( true );
+
+		$input = new Input\Input( ['foo', $commandName, $subcommandName], [] );
+		$outputStub = $this->getOutputStub();
+
+		$application = new Application( 'foo', '1.23b', $input, $outputStub );
+
+		$commandStub = $this->createMock( Command\Command::class );
+		$commandStub
+			->method( 'getDescription' )
+			->willReturn( $commandDescription );
+
+		$commandStub
+			->method( 'getMiddleware' )
+			->willReturn( [$commandMiddleware] );
+
+		$commandStub
+			->method( 'getName' )
+			->willReturn( $commandName );
+
+		$commandStub
+			->method( 'getUsage' )
+			->willReturn( $commandUsage );
+
+		$commandStub
+			->method( 'hasSubcommand' )
+			->willReturn( true );
+
+		$application->registerCommand( $commandStub );
+
+		/* Confirm that input is not parsing for subcommands by default */
+		$this->assertFalse( $input->hasSubcommand() );
+
+		$application->run();
+
+		/* Confirm that input is now parsing for subcommands */
+		$this->assertTrue( $input->hasSubcommand() );
+		$this->assertEquals( $subcommandName, $input->getSubcommand() );
+
+		/* Confirm that the command's middleware is actually being run */
+		$expectedOutput = $message = sprintf( 'Hello, %s!', $subcommandName );
+		$this->assertEquals( $expectedOutput, $outputStub->getBuffer() );
+	}
+
 	public function testRegisterMiddlewareParameter()
 	{
 		$inputStub = $this->getInputStub();

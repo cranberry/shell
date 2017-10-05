@@ -46,4 +46,15 @@ class CommandTest extends TestCase
 		$command->setUsage( $commandUsage );
 		$this->assertEquals( $commandUsage, $command->getUsage() );
 	}
+
+	public function testHasSubcommand()
+	{
+		$command = new \Cranberry\ShellTest\TestableCommand();
+
+		$this->assertFalse( $command->hasSubcommand() );
+
+		$command->setHasSubcommand( true );
+
+		$this->assertTrue( $command->hasSubcommand() );
+	}
 }

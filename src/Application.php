@@ -400,6 +400,26 @@ class Application
 		$this->setCommandDescription( $commandName, $command->getDescription() );
 		$this->setCommandUsage( $commandName, $command->getUsage() );
 
+		/* Set subcommand parsing just prior to processing the command's own middleware */
+		$route = $commandName;
+
+		if( $command->hasSubcommand() )
+		{
+			$this->pushMiddleware( new Middleware\Middleware( function( Input\InputInterface &$input, Output\OutputInterface $output )
+			{
+				$input->parseSubcommand( true );
+				return Middleware\Middleware::CONTINUE;
+			}), $route );
+		}
+		else
+		{
+			$this->pushMiddleware( new Middleware\Middleware( function( Input\InputInterface &$input, Output\OutputInterface $output )
+			{
+				$input->parseSubcommand( false );
+				return Middleware\Middleware::CONTINUE;
+			}), $route );
+		}
+
 		$commandMiddlewareObjects = $command->getMiddleware();
 		foreach( $commandMiddlewareObjects as $commandMiddlewareObject )
 		{

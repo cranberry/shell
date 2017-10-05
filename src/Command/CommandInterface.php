@@ -34,4 +34,11 @@ interface CommandInterface
 	 * @return	string
 	 */
 	public function getUsage() : string;
+
+	/**
+	 * Finds whether the command supports subcommands
+	 *
+	 * @return	boolean
+	 */
+	public function hasSubcommand() : bool;
 }

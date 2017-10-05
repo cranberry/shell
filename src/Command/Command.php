@@ -28,6 +28,11 @@ abstract class Command implements CommandInterface
 	protected $usage=[];
 
 	/**
+	 * @var	boolean
+	 */
+	protected $hasSubcommand=false;
+
+	/**
 	 * Returns command description
 	 *
 	 * @return	string
@@ -65,5 +70,15 @@ abstract class Command implements CommandInterface
 	public function getUsage() : string
 	{
 		return $this->usage;
+	}
+
+	/**
+	 * Finds whether the command supports subcommands
+	 *
+	 * @return	boolean
+	 */
+	public function hasSubcommand() : bool
+	{
+		return $this->hasSubcommand;
 	}
 }
