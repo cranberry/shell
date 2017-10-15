@@ -339,7 +339,7 @@ class Application
 	 *
 	 * @return	void
 	 */
-	protected function processMiddlewareQueue( array $middlewareQueue, string $route, array $middlewareParameters, bool $useRegex )
+	protected function processMiddlewareQueue( array $middlewareQueue, string $route, array &$middlewareParameters, bool $useRegex )
 	{
 		array_unshift( $middlewareParameters, $this->output );
 		array_unshift( $middlewareParameters, $this->input );
@@ -464,7 +464,7 @@ class Application
 			throw $exception;
 		}));
 
-		$middlewareParameters = $this->middlewareParameters;
+		$middlewareParameters = &$this->middlewareParameters;
 
 		$route = $this->input->hasCommand() ? $this->input->getCommand() : '';
 

@@ -508,6 +508,30 @@ class ApplicationTest extends TestCase
 		$this->assertEquals( $appVersion, $middlewareParam->version );
 	}
 
+	public function test_middlewareParametersPassedByReference()
+	{
+		$inputStub = $this->getInputStub();
+		$outputStub = $this->getOutputStub();
+
+		$application = new Application( 'foo', '1.23', $inputStub, $outputStub );
+
+		$application->pushMiddleware( new Middleware\Middleware( function( &$input, &$output )
+		{
+			$who = 'world';
+			$this->registerMiddlewareParameter( $who );
+			return Middleware\Middleware::CONTINUE;
+		}));
+
+		$application->pushMiddleware( new Middleware\Middleware( function( &$input, &$output, $who )
+		{
+			$output->write( "hello, {$who}" );
+		}));
+
+		$application->run();
+
+		$this->assertEquals( 'hello, world', $outputStub->getBuffer() );
+	}
+
 	public function testPushErrorMiddlewareAppendsToEndOfQueue()
 	{
 		$envTime = (string) microtime( true );
