@@ -9,7 +9,140 @@ use PHPUnit\Framework\TestCase;
 
 class InputTest extends TestCase
 {
-	public function optionProvider()
+	/**
+	 * Returns a (mostly) unique string
+	 */
+	static public function __getUniqueString( string $prefix ) : string
+	{
+		usleep( 100 );
+		return sprintf( '%s-%s', $prefix, microtime( true ) );
+	}
+
+	/**
+	 * Providers
+	 */
+	public function provider_argumentsArray() : array
+	{
+		$appName = self::__getUniqueString( 'app' );
+
+		return [
+			[ [$appName] ],
+			[ [$appName], '~/Desktop/' ],
+			[ [$appName], '--foo=bar', '~/Desktop/' ],
+		];
+	}
+
+	public function provider_hasArgument_returnsBool() : array
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+		$subcommandName = self::__getUniqueString( 'subcommand' );
+		$argumentName = self::__getUniqueString( 'arg1' );
+
+		return [
+			[ [$appName], false, false, false],														// ex., "htop"
+			[ [$appName, '~/Desktop'], true, false, false],											// ex., "ls ~/Desktop"
+
+			[ [$appName, $commandName], false, true, false ],										// ex., "git status"
+			[ [$appName, $commandName, $argumentName], true, true, false ],							// ex., "git checkout develop"
+			[ [$appName, $commandName, $subcommandName], false, true, true ],						// ex., "git stash save"
+			[ [$appName, $commandName, $subcommandName, '-m', $argumentName], true, true, true ],	// ex., "git stash save -m <message>"
+		];
+	}
+
+	public function provider_hasCommand() : array
+	{
+		$appName = self::__getUniqueString( 'app' );
+
+		return [
+			[ [$appName], false ],
+			[ [$appName, '--foo'], false ],
+			[ [$appName, '--foo', '--bar=baz'], false ],
+
+			[ [$appName, 'command'], true ],
+		];
+	}
+
+	public function provider_hasCommandOption_withoutMatch() : array
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+
+		return [
+			[ [$appName] ],
+			[ [$appName, $commandName] ],
+			[ [$appName, '--foo=bar', $commandName] ],
+		];
+	}
+
+	public function provider_hasSubcommand() : array
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+		$subcommandName = self::__getUniqueString( 'subcommand' );
+
+		return [
+			[ [$appName], false ],
+			[ [$appName, '--foo'], false ],
+			[ [$appName, '--foo', '--bar=baz'], false ],
+
+			[ [$appName], false ],
+			[ [$appName, '--foo'], false ],
+			[ [$appName, '--foo', $commandName], false ],
+			[ [$appName, '--foo', $commandName, '--bar=baz'], false ],
+
+			[ [$appName, '--foo', $commandName, $subcommandName], true ],
+			[ [$appName, '--foo', $commandName, '--bar=baz', $subcommandName], true ],
+		];
+	}
+
+	public function provider_inputArguments_withNoArguments() : array
+	{
+		$appName = self::__getUniqueString( 'app' );
+
+		return [
+			[ [$appName] ],
+			[ [$appName, '--foo=bar'] ],
+		];
+	}
+
+	public function provider_inputObjects() : array
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+		$subcommandName = self::__getUniqueString( 'subcommand' );
+
+		$inputs[] = new Input( [$appName, '--foo=bar'], [] );
+		$inputs[] = new Input( [$appName, $commandName, '--foo=bar'], [] );
+		$inputs[] = new Input( [$appName, $commandName, $subcommandName, '--foo=bar'], [] );
+
+		$inputs[1]->recognizeCommand( true );
+		$inputs[2]->recognizeSubcommand( true );
+
+		return [
+			$inputs
+		];
+	}
+
+	/**
+	 * Returns arrays of valid option strings
+	 */
+	public function provider_optionsArray()
+	{
+		return [
+			[ [] ],
+			[ ['--foo'] ],
+			[ ['--foo','--bar'] ],
+			[ ['--foo=bar','-vvv'] ],
+			[ ['-abc'] ],
+			[ ['-a','-b','-c'] ],
+		];
+	}
+
+	/**
+	 * Returns valid option strings with option name and expected option value
+	 */
+	public function provider_optionString_withMetadata()
 	{
 		return [
 			['--foo', 'foo', true],
@@ -28,164 +161,253 @@ class InputTest extends TestCase
 	}
 
 	/**
-	 * @dataProvider	optionProvider
-	 */
-	public function testConstructorRegistersApplicationOptions( $argument, $optionName, $expectedValue )
-	{
-		$arguments = ['salso', $argument];
-		$input = new Input( $arguments, [] );
-
-		$this->assertSame( $expectedValue, $input->getApplicationOption( $optionName ) );
-	}
-
-	/**
-	 * @dataProvider	optionProvider
-	 */
-	public function testConstructorRegistersCommandOptions( $argument, $optionName, $expectedValue )
-	{
-		$arguments = ['salso', 'command', $argument];
-		$input = new Input( $arguments, [] );
-
-		$this->assertSame( $expectedValue, $input->getCommandOption( $optionName ) );
-	}
-
-	public function testConstructorRegistersCommandOptionsWithNonDeterminantOrder()
-	{
-		$arguments = ['salso', 'command', '--foo', '/path/', '-abc', '--bar'];
-		$input = new Input( $arguments, [] );
-
-		$this->assertSame( true, $input->getCommandOption( 'foo' ) );
-		$this->assertSame( true, $input->getCommandOption( 'a' ) );
-		$this->assertSame( true, $input->getCommandOption( 'b' ) );
-		$this->assertSame( true, $input->getCommandOption( 'c' ) );
-		$this->assertSame( true, $input->getCommandOption( 'bar' ) );
-	}
-
-	public function testConstructorRegistersCommandArguments()
-	{
-		$commandArgument = '/path/';
-		$arguments = ['salso', 'command', '--foo', $commandArgument];
-		$input = new Input( $arguments, [] );
-
-		$commandArguments = $input->getArguments();
-
-		$this->assertTrue( is_array( $commandArguments ) );
-		$this->assertTrue( in_array( $commandArgument, $commandArguments ) );
-	}
-
-	public function testEmptyCommandArgumentNotRegistered()
-	{
-		$commandArgument = '';
-		$input = new Input( ['salso'], [] );
-
-		$input->registerArgument( $commandArgument );
-		$commandArguments = $input->getArguments();
-
-		$this->assertTrue( is_array( $commandArguments ) );
-		$this->assertEquals( 0, count( $commandArguments ) );
-	}
-
-	/**
 	 * @expectedException	LengthException
 	 */
-	public function testEmptyArgumentsArrayThrowsLengthException()
+	public function test_emptyArgumentsArray_throwsException()
 	{
 		$input = new Input( [], [] );
 	}
 
-	public function testGetCommandArgumentByIndex()
+	/**
+	 * @dataProvider	provider_argumentsArray
+	 */
+	public function test_getApplicationName( array $arguments )
 	{
-		$who = 'Dolly';
-		$input = new Input( ['cranberry', 'hello', $who], [] );
+		$appName = $arguments[0];
+		$input = new Input( $arguments, [] );
 
-		$this->assertSame( $who, $input->getArgumentByIndex(0) );
+		$this->assertEquals( $appName, $input->getApplicationName() );
 	}
 
-	public function testGetCommandArgumentByIndexWhenParsingSubcommand()
+	/**
+	 * @dataProvider	provider_optionString_withMetadata
+	 */
+	public function test_getApplicationOption( string $optionString, string $optionName, $expectedValue )
 	{
-		$subcommandArg = 'arg-' . microtime( true );
-		$input = new Input( ['cranberry', 'command', 'subcommand', $subcommandArg], [] );
-		$input->parseSubcommand( true );
+		$appName = self::__getUniqueString( 'app' );
+		$input = new Input( [$appName, $optionString], [] );
 
-		$this->assertSame( $subcommandArg, $input->getArgumentByIndex(0) );
+		$this->assertEquals( $expectedValue, $input->getApplicationOption( $optionName ) );
 	}
 
-	public function testGetCommandArgumentByNameWhenParsingSubcommand()
+	/**
+	 * @expectedException	OutOfBoundsException
+	 */
+	public function test_getApplicationOption_whenUndefined_throwsException()
 	{
-		$subcommandArg = 'arg-' . microtime( true );
-		$input = new Input( ['cranberry', 'command', 'subcommand', $subcommandArg], [] );
-		$input->parseSubcommand( true );
+		$appName = self::__getUniqueString( 'app' );
+		$input = new Input( [$appName], [] );
 
-		$commandArgumentName = 'arg1';
-		$input->nameArgument( 0, $commandArgumentName );
-
-		$this->assertSame( $subcommandArg, $input->getArgumentByName( $commandArgumentName ) );
+		$optionName = 'option-' . time();
+		$input->getApplicationOption( $optionName );
 	}
 
-	public function testGetCommandArgumentWithIntParameterReturnsByIndex()
+	public function test_getArgument_usingNumericIndex()
 	{
-		$input = new Input( ['cranberry', 'hello', 'Dolly'], [] );
+		$appName = self::__getUniqueString( 'app' );
+		$argument = self::__getUniqueString( 'arg' );
 
-		$this->assertSame( $input->getArgumentByIndex( 0 ), $input->getArgument( 0 ) );
+		$input = new Input( [$appName, $argument], [] );
+
+		$this->assertEquals( $argument, $input->getArgument( 0 ) );
 	}
 
-	public function testGetCommandArgumentWithStringParameterReturnsByName()
+	public function test_getArgument_usingString()
 	{
-		$input = new Input( ['cranberry', 'hello', 'Dolly'], [] );
+		$appName = self::__getUniqueString( 'app' );
+		$argument = self::__getUniqueString( 'arg' );
 
-		$input->nameArgument( 0, 'who' );
+		$input = new Input( [$appName, $argument], [] );
+		$input->nameArgument( 0, 'foo' );
 
-		$this->assertSame( $input->getArgumentByName( 'who' ), $input->getArgument( 'who' ) );
+		$this->assertEquals( $argument, $input->getArgument( 'foo' ) );
 	}
 
 	/**
 	 * @expectedException	InvalidArgumentException
 	 */
-	public function testGetCommandArgumentWithUnsupportedParameterTypeThrowsException()
+	public function test_getArgument_usingUnsupportedType_throwsException()
 	{
-		$input = new Input( ['cranberry', 'hello', 'Dolly'], [] );
+		$appName = self::__getUniqueString( 'app' );
+		$argument = self::__getUniqueString( 'arg' );
+
+		$input = new Input( [$appName, $argument], [] );
 
 		$input->getArgument( false );
 	}
 
-	public function testGetCommandArgumentsWhenParsingSubcommand()
+	/**
+	 * @expectedException	OutOfBoundsException
+	 */
+	public function test_getArgumentByIndex_withInvalidIndex_throwsException()
 	{
-		$input = new Input( ['cranberry', 'command', 'subcommand', 'foo'], [] );
-		$input->parseSubcommand( true );
+		$appName = self::__getUniqueString( 'app' );
+		$argument = self::__getUniqueString( 'arg' );
 
-		$arguments = $input->getArguments();
-		$this->assertSame( 1, count( $arguments ) );
-		$this->assertTrue( in_array( 'foo', $arguments ) );
+		$input = new Input( [$appName, $argument], [] );
+
+		$this->assertTrue( $input->hasArgument( 0 ) );
+		$this->assertFalse( $input->hasArgument( 1 ) );
+
+		$input->getArgumentByIndex( 1 );
 	}
 
-	public function testGetCommandOptionsReturnsArray()
+	public function test_getArgumentByIndex_commandUnrecognized()
 	{
-		$appName = time();
+		$appName = self::__getUniqueString( 'app' );
+		$argument_1 = self::__getUniqueString( 'arg' );
+		$argument_2 = self::__getUniqueString( 'arg' );
+
+		$input = new Input( [$appName, $argument_1, $argument_2], [] );
+
+		$this->assertTrue( $input->hasArgument( 0 ) );
+		$this->assertTrue( $input->hasArgument( 1 ) );
+		$this->assertEquals( $argument_1, $input->getArgumentByIndex( 0 ) );
+		$this->assertEquals( $argument_2, $input->getArgumentByIndex( 1 ) );
+	}
+
+	public function test_getArgumentByIndex_commandRecognized()
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+		$argument_1 = self::__getUniqueString( 'arg' );
+		$argument_2 = self::__getUniqueString( 'arg' );
+
+		$input = new Input( [$appName, $commandName, $argument_1, $argument_2], [] );
+		$input->recognizeCommand( true );
+
+		$this->assertTrue( $input->hasArgument( 0 ) );
+		$this->assertTrue( $input->hasArgument( 1 ) );
+		$this->assertEquals( $argument_1, $input->getArgumentByIndex( 0 ) );
+		$this->assertEquals( $argument_2, $input->getArgumentByIndex( 1 ) );
+	}
+
+	public function test_getArgumentByIndex_subcommandRecognized()
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+		$subcommandName = self::__getUniqueString( 'subcommand' );
+		$argument_1 = self::__getUniqueString( 'arg' );
+		$argument_2 = self::__getUniqueString( 'arg' );
+
+		$input = new Input( [$appName, $commandName, $subcommandName, $argument_1, $argument_2], [] );
+		$input->recognizeSubcommand( true );
+
+		$this->assertTrue( $input->hasArgument( 0 ) );
+		$this->assertTrue( $input->hasArgument( 1 ) );
+		$this->assertEquals( $argument_1, $input->getArgumentByIndex( 0 ) );
+		$this->assertEquals( $argument_2, $input->getArgumentByIndex( 1 ) );
+	}
+
+	/**
+	 * @expectedException	OutOfBoundsException
+	 */
+	public function test_getArgumentByName_withInvalidName_throwsException()
+	{
+		$appName = self::__getUniqueString( 'app' );
+
 		$input = new Input( [$appName], [] );
+		$input->nameArgument( 0, 'arg0' );
 
-		$commandOptions = $input->getCommandOptions();
-		$this->assertSame( [], $commandOptions );
+		$input->getArgumentByName( 'arg0' );
 	}
 
-	public function testGetCommandWithApplicationOptions()
+	public function test_getArgumentByName_withValidName()
 	{
-		$commandName = 'command-' . time();
-		$arguments = ['salso', '--foo=bar', $commandName];
-		$input = new Input( $arguments, [] );
+		$appName = self::__getUniqueString( 'app' );
+		$argument_0 = self::__getUniqueString( 'arg' );
 
-		$this->assertEquals( $commandName, $input->getCommand() );
+		$input = new Input( [$appName, $argument_0], [] );
+		$input->nameArgument( 0, 'arg0' );
+
+		$this->assertEquals( $argument_0, $input->getArgumentByName( 'arg0' ) );
 	}
 
-	public function testGetCommandWithCommandOptions()
+	public function test_getArguments_returnsArray()
 	{
-		$commandName = 'command-' . time();
-		$arguments = ['salso', $commandName, '--foo=bar'];
-		$input = new Input( $arguments, [] );
+		$appName = self::__getUniqueString( 'app' );
 
-		$this->assertEquals( $commandName, $input->getCommand() );
+		$argument_1 = self::__getUniqueString( 'arg' );
+		$argument_2 = self::__getUniqueString( 'arg' );
+
+		$input = new Input( [$appName, $argument_1, $argument_2], [] );
+
+		$this->assertCount( 2, $input->getArguments() );
+		$this->assertContains( $argument_1, $input->getArguments() );
+		$this->assertContains( $argument_2, $input->getArguments() );
 	}
 
-	public function testGetEnv()
+	/**
+	 * @expectedException	\OutOfBoundsException
+	 */
+	public function test_getCommandName_commandUnrecognized_throwsException()
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$argument = self::__getUniqueString( 'arg' );
+
+		$input = new Input( [$appName, $argument], [] );
+
+		$input->getCommandName();
+	}
+
+	/**
+	 * @expectedException	\OutOfBoundsException
+	 */
+	public function test_getCommandName_commandRecognizedButNotPresent_throwsException()
+	{
+		$appName = self::__getUniqueString( 'app' );
+
+		$input = new Input( [$appName], [] );
+		$input->recognizeCommand( true );
+
+		$input->getCommandName();
+	}
+
+	/**
+	 * @dataProvider	provider_optionsArray
+	 */
+	public function test_getCommandName_commandRecognizedAndPresent( array $optionsArray )
+	{
+		$commandName = self::__getUniqueString( 'command' );
+
+		$arguments = $optionsArray;
+		array_unshift( $optionsArray, self::__getUniqueString( 'app' ) );
+		array_push( $optionsArray, $commandName );
+
+		$input = new Input( $optionsArray, [] );
+		$input->recognizeCommand( true );
+
+		$this->assertEquals( $commandName, $input->getCommandName() );
+	}
+
+	/**
+	 * @expectedException	OutOfBoundsException
+	 */
+	public function test_getCommandOption_commandUnrecognized_throwsException()
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+
+		$input = new Input( [$appName, $commandName, '--foo=bar'], [] );
+
+		$input->getCommandOption( 'foo' );
+	}
+
+	/**
+	 * @dataProvider	provider_optionString_withMetadata
+	 */
+	public function test_getCommandOption( string $optionString, string $optionName, $expectedValue )
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+
+		$input = new Input( [$appName, $commandName, $optionString], [] );
+		$input->recognizeCommand( true );
+
+		$this->assertEquals( $expectedValue, $input->getCommandOption( $optionName ) );
+	}
+
+	public function test_getEnv()
 	{
 		$envName = 'FOO_' . time();
 		$envValue = (string)microtime( true );
@@ -198,82 +420,7 @@ class InputTest extends TestCase
 	/**
 	 * @expectedException	OutOfBoundsException
 	 */
-	public function testGetInvalidCommandArgumentIndexThrowsException()
-	{
-		$input = new Input( ['cranberry', 'hello'], [] );
-		$input->getArgumentByIndex(0);
-	}
-
-	/**
-	 * @expectedException	OutOfBoundsException
-	 */
-	public function testGetInvalidCommandArgumentByNameThrowsException()
-	{
-		$input = new Input( ['cranberry', 'hello'], [] );
-
-		$commandArgumentName = 'who';
-		$input->nameArgument( 0, $commandArgumentName );
-		$input->getArgumentByName( $commandArgumentName );
-	}
-
-	/**
-	 * @expectedException	OutOfBoundsException
-	 */
-	public function testGetUnnamedCommandArgumentByNameThrowsException()
-	{
-		$input = new Input( ['cranberry', 'hello'], [] );
-
-		$commandArgumentName = 'who';
-		$input->getArgumentByName( $commandArgumentName );
-	}
-
-	public function testNameCommandArgument()
-	{
-		$who = 'Dolly';
-		$input = new Input( ['cranberry', 'hello', $who], [] );
-
-		$commandArgumentName = 'who';
-		$input->nameArgument( 0, $commandArgumentName );
-
-		$this->assertSame( $who, $input->getArgumentByIndex( 0 ) );
-		$this->assertSame( $who, $input->getArgumentByName( $commandArgumentName ) );
-	}
-
-	/**
-	 * @expectedException	OutOfBoundsException
-	 */
-	public function testGetUndefinedCommandThrowsException()
-	{
-		$input = new Input( ['cranberry'], [] );
-		$input->getCommand();
-	}
-
-	/**
-	 * @expectedException	OutOfBoundsException
-	 */
-	public function testGetUnknownApplicationOptionThrowsException()
-	{
-		$input = new Input( ['cranberry', 'hello'], [] );
-
-		$optionName = 'option-' . time();
-		$input->getApplicationOption( $optionName );
-	}
-
-	/**
-	 * @expectedException	OutOfBoundsException
-	 */
-	public function testGetUnknownCommandOptionThrowsException()
-	{
-		$input = new Input( ['cranberry', 'hello'], [] );
-
-		$optionName = 'option-' . time();
-		$input->getCommandOption( $optionName );
-	}
-
-	/**
-	 * @expectedException	OutOfBoundsException
-	 */
-	public function testGetUnknownEnvThrowsException()
+	public function test_getEnv_withUnknownKey_throwsException()
 	{
 		$envName = 'FOO_' . time();
 		$input = new Input( ['cranberry'], [] );
@@ -282,126 +429,224 @@ class InputTest extends TestCase
 	}
 
 	/**
+	 * @dataProvider	provider_inputObjects
+	 */
+	public function test_getOption( Input $input )
+	{
+		$this->assertEquals( 'bar', $input->getOption( 'foo' ) );
+	}
+
+	public function test_getOption_prefersSubcommandValue()
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$appOptionValue = 'app-option';
+
+		$commandName = self::__getUniqueString( 'command' );
+		$commandOptionValue = 'command-option';
+
+		$subcommandName = self::__getUniqueString( 'subcommand' );
+		$subcommandOptionValue = 'subcommand-option';
+
+		$input = new Input( [$appName, "--foo={$appOptionValue}", $commandName, "--foo={$commandOptionValue}", $subcommandName, "--foo={$subcommandOptionValue}"], [] );
+		$input->recognizeSubcommand( true );
+
+		$this->assertSame( $subcommandOptionValue, $input->getOption( 'foo' ) );
+	}
+
+	/**
+	 * @dataProvider	provider_inputObjects
 	 * @expectedException	OutOfBoundsException
 	 */
-	public function testGetUnknownOptionThrowsException()
+	public function test_getOption_withUnknownOption_throwsException( Input $input )
 	{
-		$input = new Input( ['cranberry', 'hello'], [] );
-
-		$optionName = 'option-' . time();
-		$input->getOption( $optionName );
-	}
-
-	/**
-	 * @dataProvider	optionProvider
-	 */
-	public function testGetOptionWithMatchingApplicationOption( $argument, $optionName, $expectedValue )
-	{
-		$input = new Input( ['cranberry', $argument, 'hello'], [] );
-
-		$this->assertSame( $expectedValue, $input->getOption( $optionName ) );
-	}
-
-	/**
-	 * @dataProvider	optionProvider
-	 */
-	public function testGetOptionWithMatchingCommandOption( $argument, $optionName, $expectedValue )
-	{
-		$input = new Input( ['cranberry', 'hello', $argument], [] );
-
-		$this->assertSame( $expectedValue, $input->getOption( $optionName ) );
-	}
-
-	public function testGetOptionWithMatchingApplicationAndCommandOptionsReturnsCommandOptionValue()
-	{
-		$applicationOptionValue = 'bar';
-		$commandOptionValue = 'baz';
-
-		$input = new Input( ['cranberry', "--foo={$applicationOptionValue}", 'hello', "--foo={$commandOptionValue}"], [] );
-
-		$this->assertSame( $commandOptionValue, $input->getOption( 'foo' ) );
+		$this->assertFalse( $input->hasOption( 'baz' ) );
+		$input->getOption( 'baz' );
 	}
 
 	/**
 	 * @expectedException	OutOfBoundsException
 	 */
-	public function testGetUndefinedSubcommandThrowsException()
+	public function test_getSubcommandName_subcommandUnrecognized_throwsException()
 	{
-		$input = new Input( ['cranberry', 'command'], [] );
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+		$subcommandName = self::__getUniqueString( 'subcommand' );
 
-		$input->parseSubcommand( true );
-		$input->getSubcommand();
+		$input = new Input( [$appName, $commandName, '--foo=bar', $subcommandName], [] );
+
+		$input->getSubcommandName();
+	}
+
+	/**
+	 * @expectedException	\OutOfBoundsException
+	 */
+	public function test_getSubcommandName_subcommandRecognizedButNotPresent_throwsException()
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+
+		$input = new Input( [$appName, $commandName, '--foo=bar'], [] );
+		$input->recognizeCommand( true );
+
+		$input->getSubcommandName();
+	}
+
+	public function test_getSubcommandName_subcommandRecognizedAndPresent()
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+		$subcommandName = self::__getUniqueString( 'subcommand' );
+
+		$input = new Input( [$appName, $commandName, '--foo=bar', $subcommandName], [] );
+		$input->recognizeSubcommand( true );
+
+		$this->assertEquals( $subcommandName, $input->getSubcommandName() );
 	}
 
 	/**
 	 * @expectedException	OutOfBoundsException
 	 */
-	public function testGetSubcommandWithoutParsingSubcommandThrowsException()
+	public function test_getSubcommandOption_subcommandNotRecognized_throwsException()
 	{
-		$input = new Input( ['cranberry', 'command', 'subcommand', 'arg1'], [] );
-		$input->getSubcommand();
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+		$subcommandName = self::__getUniqueString( 'subcommand' );
+
+		$input = new Input( [$appName, $commandName, $subcommandName, '--foo=bar'], [] );
+
+		$input->getCommandOption( 'foo' );
 	}
 
-	public function testHasArgumentWithoutMatchingIndexReturnsFalse()
+	/**
+	 * @dataProvider	provider_optionString_withMetadata
+	 */
+	public function test_getSubcommandOption( string $optionString, string $optionName, $expectedValue )
 	{
-		$input = new Input( ['cranberry'], [] );
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+		$subcommandName = self::__getUniqueString( 'subcommand' );
+
+		$input = new Input( [$appName, $commandName, $subcommandName, $optionString], [] );
+		$input->recognizeSubcommand( true );
+
+		$this->assertEquals( $expectedValue, $input->getSubcommandOption( $optionName ) );
+	}
+
+	/**
+	 * @dataProvider	provider_optionString_withMetadata
+	 */
+	public function test_hasApplicationOption_withMatch_returnsTrue( $argument, $optionName )
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$input = new Input( [$appName, $argument], [] );
+
+		$this->assertTrue( $input->hasApplicationOption( $optionName ) );
+	}
+
+	/**
+	 * @dataProvider	provider_optionString_withMetadata
+	 */
+	public function test_hasApplicationOption_withoutMatch_returnsFalse( $argument, $optionName )
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$argument = self::__getUniqueString( 'arg' );
+		$input = new Input( [$appName, $argument], [] );
+
+		$this->assertFalse( $input->hasOption( $optionName ) );
+	}
+
+	public function test_hasApplicationOption_inAbnormalPosition()
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$argument = self::__getUniqueString( 'arg' );
+		$input = new Input( [$appName, $argument, $argument, '--foo=bar'], [] );
+
+		$this->assertTrue( $input->hasApplicationOption( 'foo' ) );
+		$this->assertEquals( 'bar', $input->getApplicationOption( 'foo' ) );
+	}
+
+	/**
+	 * @dataProvider	provider_inputArguments_withNoArguments
+	 */
+	public function test_hasArgument_withoutMatch_returnsFalse( array $arguments )
+	{
+		$input = new Input( $arguments, [] );
 		$this->assertFalse( $input->hasArgument(0) );
 	}
 
-	public function testHasArgumentWithoutMatchingNameReturnsFalse()
+	/**
+	 * @dataProvider	provider_hasArgument_returnsBool
+	 */
+	public function test_hasArgument_withMatch_returnsBool( array $arguments, bool $shouldHaveArgument, bool $shouldRecognizeCommand=false, bool $shouldRecognizeSubcommand=false )
 	{
-		$input = new Input( ['cranberry'], [] );
-		$this->assertFalse( $input->hasArgument( 'foo' ) );
+		$input = new Input( $arguments, [] );
+
+		$input->recognizeCommand( $shouldRecognizeCommand );
+		$input->recognizeSubcommand( $shouldRecognizeSubcommand );
+
+		$this->assertEquals( $shouldHaveArgument, $input->hasArgument( 0 ) );
 	}
 
-	public function testHasArgumentWithMatchingIndexReturnsTrue()
+	/**
+	 * @dataProvider	provider_hasCommand
+	 */
+	public function test_hasCommand_commandUnrecognized_returnsFalse( array $arguments )
 	{
-		$input = new Input( ['cranberry', 'command', 'bar'], [] );
-		$this->assertTrue( $input->hasArgument( 0 ) );
+		$input = new Input( $arguments, [] );
+		$this->assertEquals( false, $input->hasCommand() );
 	}
 
-	public function testHasArgumentWithMatchingIndexWhenParsingSubcommand()
+	/**
+	 * @dataProvider	provider_hasCommand
+	 */
+	public function test_hasCommand_commandRecognized( array $arguments, bool $hasCommand )
 	{
-		$subcommandArg = 'arg-' . microtime( true );
-		$input = new Input( ['cranberry', 'command', 'subcommand', $subcommandArg], [] );
-		$input->parseSubcommand( true );
+		$input = new Input( $arguments, [] );
+		$input->recognizeCommand( true );
 
-		$this->assertTrue( $input->hasArgument( 0 ) );
-		$this->assertFalse( $input->hasArgument( 1 ) );
+		$this->assertEquals( $hasCommand, $input->hasCommand() );
 	}
 
-	public function testHasArgumentWithMatchingNameReturnsFalse()
+	/**
+	 * @dataProvider	provider_hasCommandOption_withoutMatch
+	 */
+	public function test_hasCommandOption_withoutMatch_returnsFalse( array $arguments )
 	{
-		$input = new Input( ['cranberry', 'command', 'bar'], [] );
-		$input->nameArgument( 0, 'foo' );
+		$appName = self::__getUniqueString( 'app' );
+		$optionName = self::__getUniqueString( 'option' );
 
-		$this->assertTrue( $input->hasArgument( 'foo' ) );
+		$input = new Input( [$appName], [] );
+		$input->recognizeCommand( true );
+
+		$this->assertFalse( $input->hasCommandOption($optionName) );
 	}
 
-	public function testHasArgumentWithMatchingNameWhenParsingSubcommand()
+	public function test_hasCommandOption_withMatch_returnsTrue()
 	{
-		$subcommandArg = 'arg-' . microtime( true );
+		$appName = self::__getUniqueString( 'app' );
+		$optionName = self::__getUniqueString( 'option' );
 
-		$input = new Input( ['cranberry', 'command', 'subcommand', $subcommandArg], [] );
-		$input->nameArgument( 0, 'arg1' );
-		$input->parseSubcommand( true );
+		$input = new Input( [$appName], [] );
 
-		$this->assertTrue( $input->hasArgument( 'arg1' ) );
+		$this->assertFalse( $input->hasCommandOption($optionName) );
 	}
 
-	public function testHasCommandWithoutMatchReturnsFalse()
+	public function test_hasCommandOption_inAbnormalPosition()
 	{
-		$input = new Input( ['cranberry'], [] );
-		$this->assertFalse( $input->hasCommand() );
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+		$argument = self::__getUniqueString( 'arg' );
+
+		$input = new Input( [$appName, '--boo=baz', $commandName, $argument, '--foo=bar'], [] );
+		$input->recognizeCommand( true );
+
+		$this->assertEquals( $commandName, $input->getCommandName() );
+
+		$this->assertTrue( $input->hasCommandOption( 'foo' ) );
+		$this->assertEquals( 'bar', $input->getCommandOption( 'foo' ) );
 	}
 
-	public function testHasCommandWithMatchReturnsTrue()
-	{
-		$input = new Input( ['cranberry', 'hello'], [] );
-		$this->assertTrue( $input->hasCommand() );
-	}
-
-	public function testHasEnvWithNoMatchesReturnsFalse()
+	public function test_hasEnv_withoutMatch_returnsFalse()
 	{
 		$envName = 'FOO_' . time();
 		$input = new Input( ['cranberry'], [] );
@@ -409,7 +654,7 @@ class InputTest extends TestCase
 		$this->assertFalse( $input->hasEnv( $envName ) );
 	}
 
-	public function testHasEnvWithMatchReturnsTrue()
+	public function test_hasEnv_withMatch_returnsTrue()
 	{
 		$envName = 'FOO_' . time();
 		$input = new Input( ['cranberry'], [$envName => microtime()] );
@@ -418,97 +663,135 @@ class InputTest extends TestCase
 	}
 
 	/**
-	 * @dataProvider	optionProvider
+	 * @dataProvider	provider_inputObjects
 	 */
-	public function testHasOptionWithNoMatchesReturnsFalse( $argument, $optionName )
+	public function test_hasOption( Input $input )
 	{
-		$input = new Input( ['cranberry', 'hello'], [] );
-		$this->assertFalse( $input->hasOption( $optionName ) );
+		$invalidOption = self::__getUniqueString( 'option' );
+
+		$this->assertTrue( $input->hasOption( 'foo' ) );
+		$this->assertFalse( $input->hasOption( $invalidOption ) );
 	}
 
 	/**
-	 * @dataProvider	optionProvider
+	 * @dataProvider	provider_hasSubcommand
 	 */
-	public function testHasOptionWithMatchingApplicationOptionReturnsTrue( $argument, $optionName )
+	public function test_hasSubcommand_subcommandUnrecognized( array $arguments )
 	{
-		$input = new Input( ['cranberry', $argument, 'hello'], [] );
-		$this->assertTrue( $input->hasOption( $optionName ) );
+		$input = new Input( $arguments, [] );
+		$this->assertEquals( false, $input->hasSubcommand() );
 	}
 
 	/**
-	 * @dataProvider	optionProvider
+	 * @dataProvider	provider_hasSubcommand
 	 */
-	public function testHasOptionWithMatchingCommandOptionReturnsTrue( $argument, $optionName )
+	public function test_hasSubcommand_subcommandRecognized( array $arguments, bool $hasSubcommand )
 	{
-		$input = new Input( ['cranberry', 'hello', $argument], [] );
-		$this->assertTrue( $input->hasOption( $optionName ) );
+		$input = new Input( $arguments, [] );
+		$input->recognizeSubcommand( true );
+
+		$this->assertEquals( $hasSubcommand, $input->hasSubcommand() );
+	}
+
+	public function test_hasSubcommandOption_inAbnormalPosition()
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+		$subcommandName = self::__getUniqueString( 'subcommand' );
+		$argument = self::__getUniqueString( 'arg' );
+
+		$input = new Input( [$appName, '--app=one', $commandName, '--command=two', $subcommandName, $argument, '--subcommand=three'], [] );
+		$input->recognizeSubcommand( true );
+
+		$this->assertEquals( $subcommandName, $input->getSubcommandName() );
+
+		$this->assertTrue( $input->hasSubcommandOption( 'subcommand' ) );
+		$this->assertEquals( 'three', $input->getSubcommandOption( 'subcommand' ) );
 	}
 
 	/**
-	 * @dataProvider	optionProvider
+	 * @dataProvider	provider_optionString_withMetadata
 	 */
-	public function testHasMatchingApplicationOptionReturnsTrue( $argument, $optionName )
+	public function test_hasSubcommandOption_subcommandNotRecognized_returnsFalse( string $optionString, string $optionName )
 	{
-		$input = new Input( ['cranberry', $argument, 'hello'], [] );
-		$this->assertTrue( $input->hasApplicationOption( $optionName ) );
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+		$subcommandName = self::__getUniqueString( 'subcommand' );
+
+		$input = new Input( [$appName, $commandName, $subcommandName, $optionString], [] );
+
+		$this->assertFalse( $input->hasSubcommandOption( $optionName ) );
 	}
 
 	/**
-	 * @dataProvider	optionProvider
+	 * @dataProvider	provider_optionString_withMetadata
 	 */
-	public function testHasMatchingCommandOptionReturnsTrue( $argument, $optionName )
+	public function test_hasSubcommandOption_subcommandRecognized_withoutMatch_returnsFalse( string $optionString, string $optionName, $expectedValue )
 	{
-		$input = new Input( ['cranberry', 'hello', $argument], [] );
-		$this->assertTrue( $input->hasCommandOption( $optionName ) );
-	}
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+		$subcommandName = self::__getUniqueString( 'subcommand' );
+		$subcommandOptionName = self::__getUniqueString( 'subcommand-option' );
 
-	public function testHasSubcommandReturnsFalseWhenCommandArgumentsEmpty()
-	{
-		$input = new Input( ['cranberry', 'command'], [] );
+		$input = new Input( [$appName, $commandName, $subcommandName, $optionString], [] );
+		$input->recognizeSubcommand( true );
 
-		$this->assertFalse( $input->hasSubcommand() );
-
-		$input->parseSubcommand( true );
-
-		$this->assertFalse( $input->hasSubcommand() );
-	}
-
-	public function testHasSubcommandReturnsTrueWhenCommandArgumentsNotEmpty()
-	{
-		$subcommandName = 'subcommand-' . microtime( true );
-		$input = new Input( ['cranberry', 'command', $subcommandName, 'arg1'], [] );
-
-		$this->assertFalse( $input->hasSubcommand() );
-
-		$input->parseSubcommand( true );
-
-		$this->assertTrue( $input->hasSubcommand() );
-		$this->assertEquals( $subcommandName, $input->getSubcommand() );
-	}
-
-
-	/**
-	 * @dataProvider	optionProvider
-	 */
-	public function testHasUnknownApplicationOptionReturnsFalse( $argument, $optionName )
-	{
-		$input = new Input( ['cranberry', 'hello'], [] );
-		$this->assertFalse( $input->hasApplicationOption( $optionName ) );
+		$this->assertFalse( $input->hasSubcommandOption( $subcommandOptionName ) );
 	}
 
 	/**
-	 * @dataProvider	optionProvider
+	 * @dataProvider	provider_optionString_withMetadata
 	 */
-	public function testHasUnknownCommandOptionReturnsFalse( $argument, $optionName )
+	public function test_hasSubcommandOption_subcommandRecognized_withMatch_returnsTrue( string $optionString, string $optionName, $expectedValue )
 	{
-		$input = new Input( ['cranberry', 'hello'], [] );
-		$this->assertFalse( $input->hasCommandOption( $optionName ) );
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+		$subcommandName = self::__getUniqueString( 'subcommand' );
+
+		$input = new Input( [$appName, $commandName, $subcommandName, $optionString], [] );
+		$input->recognizeSubcommand( true );
+
+		$this->assertTrue( $input->hasSubcommandOption( $optionName ) );
 	}
 
-	public function testHasUndefinedSubcommandReturnsFalse()
+	public function test_nameArgument_commandNotRecognized()
 	{
-		$input = new Input( ['cranberry'], [] );
-		$this->assertFalse( $input->hasSubcommand() );
+		$appName = self::__getUniqueString( 'app' );
+
+		$argument_0 = self::__getUniqueString( 'arg' );
+		$argument_1 = self::__getUniqueString( 'arg' );
+
+		$input = new Input( [$appName, $argument_0, $argument_1], [] );
+
+		$input->nameArgument( 0, 'arg0' );
+		$input->nameArgument( 1, 'arg1' );
+
+		$this->assertSame( $argument_0, $input->getArgumentByIndex( 0 ) );
+		$this->assertSame( $argument_1, $input->getArgumentByIndex( 1 ) );
+
+		$this->assertSame( $argument_0, $input->getArgumentByName( 'arg0' ) );
+		$this->assertSame( $argument_1, $input->getArgumentByName( 'arg1' ) );
+	}
+
+	public function test_nameArgument_commandIsRecognized()
+	{
+		$appName = self::__getUniqueString( 'app' );
+		$commandName = self::__getUniqueString( 'command' );
+
+		$argument_0 = self::__getUniqueString( 'arg' );
+		$argument_1 = self::__getUniqueString( 'arg' );
+
+		$input = new Input( [$appName, $commandName, $argument_0, $argument_1], [] );
+		$input->recognizeCommand( true );
+
+		$input->nameArgument( 0, 'arg0' );
+		$input->nameArgument( 1, 'arg1' );
+
+		$this->assertSame( $argument_0, $input->getArgumentByIndex( 0 ) );
+		$this->assertSame( $argument_1, $input->getArgumentByIndex( 1 ) );
+
+		$this->assertSame( $argument_0, $input->getArgumentByName( 'arg0' ) );
+		$this->assertSame( $argument_1, $input->getArgumentByName( 'arg1' ) );
 	}
 
 	/**
@@ -517,66 +800,22 @@ class InputTest extends TestCase
 	 *
 	 * @expectedException	InvalidArgumentException
 	 */
-	public function testParseInvalidOptionStringThrowsException()
+	public function test_getOptionStringValues_withInvalidFormat_throwsException()
 	{
-		$result = Input::parseOptionString( 'foo' );
+		$result = Input::getOptionStringValues( 'foo' );
 		$this->assertFalse( $result );
 	}
 
 	/**
-	 * @dataProvider	optionProvider
+	 * @dataProvider	provider_optionString_withMetadata
 	 */
-	public function testParseOptionString( $argument, $optionName, $expectedValue )
+	public function test_getOptionStringValues_withValidFormat( $argument, $optionName, $expectedValue )
 	{
-		$result = Input::parseOptionString( $argument );
+		$result = Input::getOptionStringValues( $argument );
 
 		$this->assertTrue( is_array( $result ) );
 		$this->assertTrue( isset( $result[$optionName] ) );
 
 		$this->assertSame( $expectedValue, $result[$optionName] );
-	}
-
-	/**
-	 * @dataProvider	optionProvider
-	 */
-	public function testRegisterApplicationOption( $argument, $optionName, $expectedValue )
-	{
-		$input = new Input( ['salso'], [] );
-
-		$result = Input::parseOptionString( $argument );
-		foreach( $result as $optionName => $optionValue )
-		{
-			$input->registerApplicationOption( $optionName, $optionValue );
-		}
-
-		$this->assertSame( $expectedValue, $input->getApplicationOption( $optionName ) );
-	}
-
-	public function testRegisterCommandArgument()
-	{
-		$commandArgument = '/path/';
-		$input = new Input( ['salso'], [] );
-
-		$input->registerArgument( $commandArgument );
-		$commandArguments = $input->getArguments();
-
-		$this->assertTrue( is_array( $commandArguments ) );
-		$this->assertTrue( in_array( $commandArgument, $commandArguments ) );
-	}
-
-	/**
-	 * @dataProvider	optionProvider
-	 */
-	public function testRegisterCommandOption( $argument, $optionName, $expectedValue )
-	{
-		$input = new Input( ['salso'], [] );
-
-		$result = Input::parseOptionString( $argument );
-		foreach( $result as $optionName => $optionValue )
-		{
-			$input->registerCommandOption( $optionName, $optionValue );
-		}
-
-		$this->assertSame( $expectedValue, $input->getCommandOption( $optionName ) );
 	}
 }

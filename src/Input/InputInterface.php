@@ -15,6 +15,13 @@ interface InputInterface
 	public function __construct( array $arguments, array $env );
 
 	/**
+	 * Returns application name
+	 *
+	 * @return	string
+	 */
+	public function getApplicationName() : string;
+
+	/**
 	 * @param	int|string	$key
 	 * @return	string
 	 */
@@ -23,7 +30,7 @@ interface InputInterface
 	/**
 	 * @return	string
 	 */
-	public function getCommand() : string;
+	public function getCommandName() : string;
 
 	/**
 	 * @param	string	$envName
@@ -44,7 +51,7 @@ interface InputInterface
 	 *
 	 * @return	string
 	 */
-	public function getSubcommand() : string;
+	public function getSubcommandName() : string;
 
 	/**
 	 * @param	int|string	$key
@@ -75,12 +82,4 @@ interface InputInterface
 	 * @return	boolean
 	 */
 	public function hasSubcommand() : bool;
-
-	/**
-	 * Specify whether to parse command arguments for a subcommand
-	 *
-	 * @param	boolean	$parseSubcommand
-	 * @return	void
-	 */
-	public function parseSubcommand( bool $parseSubcommand );
 }

@@ -10,120 +10,105 @@ class Input implements InputInterface
 	/**
 	 * @var	array
 	 */
-	protected $applicationOptions=[];
-
-	/**
-	 * @var	array
-	 */
 	protected $argumentNames=[];
 
 	/**
+	 * Array of arguments; like $argv
+	 *
 	 * @var	array
 	 */
-	protected $arguments=[];
-
-	/**
-	 * @var	string
-	 */
-	protected $commandName;
+	protected $argv=[];
 
 	/**
 	 * @var	array
 	 */
-	protected $commandOptions=[];
+	protected $argvMembers;
 
 	/**
+	 * Array of environment variables; like getenv()
+	 *
 	 * @var	array
 	 */
 	protected $env=[];
 
 	/**
-	 * @var	boolean
+	 * Whether to identify the second argument as a command when parsing
+	 *
+	 * @var	bool
 	 */
-	protected $parseSubcommand=false;
+	protected $shouldRecognizeCommand=false;
 
 	/**
-	 * @param	array	$arguments	Array of arguments; like $argv
-	 * @param	array	$env		Array of environment variables; like getenv()
+	 * Whether to identify the third argument as a subcommand when parsing
+	 *
+	 * @var	bool
+	 */
+	protected $shouldRecognizeSubcommand=false;
+
+	/**
+	 * Whether to re-parse arguments into members, or return cached members
+	 *
+ 	 * @var	bool
+	 */
+	protected $shouldParseArgumentsIntoMembers=false;
+
+	/**
+	 * @param	array	$argv	Array of arguments; like $argv
+	 *
+	 * @param	array	$env	Array of environment variables; like getenv()
+	 *
 	 * @return	void
 	 */
-	public function __construct( array $arguments, array $env )
+	public function __construct( array $argv, array $env )
 	{
-		if( count( $arguments ) == 0 )
+		if( count( $argv ) == 0 )
 		{
 			throw new \LengthException( 'Invalid arguments' );
 		}
 
-		/* Process application options */
-		do
-		{
-			$argument = next( $arguments );
-
-			try
-			{
-				$optionData = self::parseOptionString( $argument );
-
-				foreach( $optionData as $optionName => $optionValue )
-				{
-					$this->registerApplicationOption( $optionName, $optionValue );
-				}
-			}
-			catch( \InvalidArgumentException $e )
-			{
-				break;
-			}
-		}
-		while( $argument !== false );
-
-		/* Process command name */
-		if( $argument !== false )
-		{
-			$this->commandName = $argument;
-		}
-
-		do
-		{
-			$argument = next( $arguments );
-
-			/* Process command option */
-			try
-			{
-				$optionData = self::parseOptionString( $argument );
-
-				foreach( $optionData as $optionName => $optionValue )
-				{
-					$this->registerCommandOption( $optionName, $optionValue );
-				}
-			}
-
-			/* Process command argument */
-			catch( \InvalidArgumentException $e )
-			{
-				$this->registerArgument( $argument );
-			}
-		}
-		while( $argument !== false );
-
-		/* Environment Variables */
+		$this->argv = $argv;
 		$this->env = $env;
 	}
 
 	/**
+	 * Returns application name
+	 *
+	 * @return	string
+	 */
+	public function getApplicationName() : string
+	{
+		$argvMembers = $this->getArgvMembers();
+		return $argvMembers['application_name'];
+	}
+
+	/**
+	 * Returns value of specified application option, if present
+	 *
 	 * @param	string	$optionName
+	 *
+	 * @throws	OutOfBoundsException	If application option not found
+	 *
 	 * @return	mixed
 	 */
 	public function getApplicationOption( string $optionName )
 	{
-		if( !isset( $this->applicationOptions[$optionName] ) )
+		$argvMembers = $this->getArgvMembers();
+
+		if( !isset( $argvMembers['application_options'][$optionName] ) )
 		{
 			throw new \OutOfBoundsException( "Application option '{$optionName}' not found" );
 		}
 
-		return $this->applicationOptions[$optionName];
+		return $argvMembers['application_options'][$optionName];
 	}
 
 	/**
+	 * Convenience method for getting numerically indexed or named arguments
+	 *
 	 * @param	int|string	$key
+	 *
+	 * @throws	InvalidArgumentException	If $key uses incorrect type
+	 *
 	 * @return	string
 	 */
 	public function getArgument( $key ) : string
@@ -143,26 +128,33 @@ class Input implements InputInterface
 	}
 
 	/**
+	 * Returns numerically indexed argument
+	 *
 	 * @param	int		$index
+	 *
+	 * @throws	OutOfBoundsException	If attempting to access invalid index
+	 *
 	 * @return	string
 	 */
 	public function getArgumentByIndex( int $index ) : string
 	{
-		if( $this->parseSubcommand )
+		$argvMembers = $this->getArgvMembers();
+
+		if( !isset( $argvMembers['arguments'][$index] ) )
 		{
-			$index++;
+			throw new \OutOfBoundsException( "Invalid argument index '{$index}'" );
 		}
 
-		if( !isset( $this->arguments[$index] ) )
-		{
-			throw new \OutOfBoundsException( "Invalid command argument index '{$index}'" );
-		}
-
-		return $this->arguments[$index];
+		return $argvMembers['arguments'][$index];
 	}
 
 	/**
+	 * Returns named argument
+	 *
 	 * @param	string	$name
+	 *
+	 * @throws	OutOfBoundsException	If attempting to access invalid index
+	 *
 	 * @return	string
 	 */
 	public function getArgumentByName( string $name ) : string
@@ -177,55 +169,139 @@ class Input implements InputInterface
 	}
 
 	/**
+	 * Returns array containing all arguments
+	 *
 	 * @return	array
 	 */
 	public function getArguments() : array
 	{
-		if( $this->parseSubcommand )
-		{
-			return array_slice( $this->arguments, 1 );
-		}
-
-		return $this->arguments;
+		$argvMembers = $this->getArgvMembers();
+		return $argvMembers['arguments'];
 	}
 
 	/**
+	 * Returns an associative array containing identified members of the input
+	 * arguments.
+	 *
+	 * @return	array
+	 */
+	protected function getArgvMembers() : array
+	{
+		/* We have a cached copy from a previous parsing */
+		if( $this->argvMembers != null )
+		{
+			/* According to our simple heuristics, we don't need to parse again */
+			if( !$this->shouldParseArgumentsIntoMembers )
+			{
+				return $this->argvMembers;
+			}
+		}
+
+		/* Reset the internal pointer to prevent weird surprises */
+		$arguments = $this->argv;
+
+		$argvMembers = [
+			'application_name'		=> null,
+			'application_options'	=> [],
+			'command_name'			=> null,
+			'command_options'		=> [],
+			'subcommand_name'		=> null,
+			'subcommand_options'	=> [],
+			'arguments'				=> [],
+		];
+
+		/* Application Name */
+		$argvMembers['application_name'] = array_shift( $arguments );
+		$optionBucket = 'application_options';
+
+		foreach( $arguments as $argument )
+		{
+			try
+			{
+				$optionData = self::getOptionStringValues( $argument );
+
+				foreach( $optionData as $optionName => $optionValue )
+				{
+					$argvMembers[$optionBucket][$optionName] = $optionValue;
+				}
+			}
+
+			// The current argument does not match the option string
+			// format (`-a`, `-abc`, `--foo`, `--foo=bar`).
+			catch( \InvalidArgumentException $e )
+			{
+				if( $argvMembers['command_name'] == null && $this->shouldRecognizeCommand )
+				{
+					$argvMembers['command_name'] = $argument;
+
+					/* Future options should be flagged at the command level */
+					$optionBucket = 'command_options';
+				}
+				else if( $argvMembers['subcommand_name'] == null && $this->shouldRecognizeSubcommand )
+				{
+					$argvMembers['subcommand_name'] = $argument;
+
+					/* Future options should be flagged at the subcommand level */
+					$optionBucket = 'subcommand_options';
+				}
+				else
+				{
+					$argvMembers['arguments'][] = $argument;
+				}
+			}
+		}
+
+		$this->argvMembers = $argvMembers;
+		$this->shouldParseArgumentsIntoMembers = false;
+
+		return $this->argvMembers;
+	}
+
+	/**
+	 * Returns name of command if present
+	 *
+	 * @throws	OutOfBoundsException	If command not recognized or included in arguments
+	 *
 	 * @return	string
 	 */
-	public function getCommand() : string
+	public function getCommandName() : string
 	{
-		if( $this->commandName === null )
+		$argvMembers = $this->getArgvMembers();
+		if( $argvMembers['command_name'] === null )
 		{
 			throw new \OutOfBoundsException( "Command name not defined" );
 		}
 
-		return $this->commandName;
+		return $argvMembers['command_name'];
 	}
 
 	/**
+	 * Returns value of given command option if defined
+	 *
 	 * @param	string	$optionName
+	 *
+	 * @throws	OutOfBoundsException	If option not defined
+	 *
 	 * @return	mixed
 	 */
 	public function getCommandOption( string $optionName )
 	{
-		if( !isset( $this->commandOptions[$optionName] ) )
+		$argvMembers = $this->getArgvMembers();
+		if( !isset( $argvMembers['command_options'][$optionName] ) )
 		{
 			throw new \OutOfBoundsException( "Command option '{$optionName}' not found" );
 		}
 
-		return $this->commandOptions[$optionName];
+		return $argvMembers['command_options'][$optionName];
 	}
 
 	/**
-	 * @return	array
-	 */
-	public function getCommandOptions() : array
-	{
-		return $this->commandOptions;
-	}
-
-	/**
+	 * Returns value of given environment variable if defined
+	 *
 	 * @param	string	$envName
+	 *
+	 * @throws	OutOfBoundsException	If environment variable not defined
+	 *
 	 * @return	string
 	 */
 	public function getEnv( string $envName ) : string
@@ -239,15 +315,23 @@ class Input implements InputInterface
 	}
 
 	/**
-	 * Get value of $optionName as either command or application option. Prefers
-	 * value of command option over application option if both exist.
+	 * Returns value of $optionName as either subcommand, command or application
+	 * option, and prefers them in that order if there are collisions.
 	 *
 	 * @param	string	$optionName
+	 *
+	 * @throws	OutOfBoundsException	If the option is not found anywhere
+	 *
 	 * @return	mixed
 	 */
 	public function getOption( string $optionName )
 	{
-		/* Command option value is preferred over application */
+		/* Order of preference: subcommand > command > application */
+
+		if( $this->hasSubcommandOption( $optionName ) )
+		{
+			return $this->getSubcommandOption( $optionName );
+		}
 		if( $this->hasCommandOption( $optionName ) )
 		{
 			return $this->getCommandOption( $optionName );
@@ -261,147 +345,15 @@ class Input implements InputInterface
 	}
 
 	/**
-	 * Returns subcommand name
+	 * Parses string for option
 	 *
-	 * @throws	OutOfBoundsException	If subcommand is not defined
-	 *
-	 * @return	string
-	 */
-	public function getSubcommand() : string
-	{
-		if( $this->parseSubcommand == false )
-		{
-			throw new \OutOfBoundsException( "Subcommand not defined" );
-		}
-
-		if( count( $this->arguments ) == 0 )
-		{
-			throw new \OutOfBoundsException( "Subcommand not defined" );
-		}
-
-		return $this->arguments[0];
-	}
-
-	/**
-	 * @param	string	$optionName
-	 * @return	boolean
-	 */
-	public function hasApplicationOption( string $optionName ) : bool
-	{
-		return isset( $this->applicationOptions[$optionName] );
-	}
-
-	/**
-	 * @param	int|string	$key
-	 * @return	boolean
-	 */
-	public function hasArgument( $key ) : bool
-	{
-		if( is_int( $key ) )
-		{
-			if( $this->parseSubcommand )
-			{
-				$key++;
-			}
-
-			return isset( $this->arguments[$key] );
-		}
-
-		if( is_string( $key ) )
-		{
-			if( isset( $this->argumentNames[$key] ) )
-			{
-				return isset( $this->arguments[$this->argumentNames[$key]] );
-			}
-
-			return false;
-		}
-	}
-
-	/**
-	 * @return	boolean
-	 */
-	public function hasCommand() : bool
-	{
-		return $this->commandName !== null;
-	}
-
-	/**
-	 * @param	string	$optionName
-	 * @return	boolean
-	 */
-	public function hasCommandOption( string $optionName ) : bool
-	{
-		return isset( $this->commandOptions[$optionName] );
-	}
-
-	/**
-	 * @param	string	$envName
-	 * @return	boolean
-	 */
-	public function hasEnv( string $envName ) : bool
-	{
-		return isset( $this->env[$envName] );
-	}
-
-	/**
-	 * Evaluate existence of $optionName as either application or command option
-	 *
-	 * @param	string	$optionName
-	 * @return	boolean
-	 */
-	public function hasOption( string $optionName ) : bool
-	{
-		$hasOption = false;
-		$hasOption = $hasOption || $this->hasApplicationOption( $optionName );
-		$hasOption = $hasOption || $this->hasCommandOption( $optionName );
-
-		return $hasOption;
-	}
-
-	/**
-	 * Checks if subcommand is defined
-	 *
-	 * @return	boolean
-	 */
-	public function hasSubcommand() : bool
-	{
-		if( $this->parseSubcommand == false )
-		{
-			return false;
-		}
-
-		return count( $this->arguments ) > 0;
-	}
-
-	/**
-	 * @param	int		$index
-	 * @param	string	$name
-	 * @return	void
-	 */
-	public function nameArgument( int $index, string $name )
-	{
-		$this->argumentNames[$name] = $index;
-	}
-
-	/**
-	 * Specify whether to parse command arguments for a subcommand
-	 *
-	 * @param	boolean	$parseSubcommand
-	 * @return	void
-	 */
-	public function parseSubcommand( bool $parseSubcommand )
-	{
-		$this->parseSubcommand = $parseSubcommand;
-	}
-
-	/**
 	 * @param	string	$optionString
+	 *
 	 * @return	array
 	 */
-	public static function parseOptionString( string $optionString ) : array
+	public static function getOptionStringValues( string $optionString ) : array
 	{
-		/* $optionString must match `-a`, `-abc`, or `--foo` */
+		/* $optionString must match `-a`, `-abc`, `--foo`, or `--foo=bar` */
 		if( substr( $optionString, 0, 1 ) != '-' )
 		{
 			throw new \InvalidArgumentException( 'Option string should match format "-a", "-abc", "--foo", or "--foo=bar"' );
@@ -472,36 +424,221 @@ class Input implements InputInterface
 	}
 
 	/**
-	 * @param	string	$optionName
-	 * @param	mixed	$optionValue
-	 * @return	void
+	 * Returns subcommand name
+	 *
+	 * @throws	OutOfBoundsException	If subcommand is not defined
+	 *
+	 * @return	string
 	 */
-	public function registerApplicationOption( string $optionName, $optionValue )
+	public function getSubcommandName() : string
 	{
-		$this->applicationOptions[$optionName] = $optionValue;
-	}
-
-	/**
-	 * @param	string	$argument
-	 * @return	void
-	 */
-	public function registerArgument( string $argument )
-	{
-		if( strlen( $argument ) < 1 )
+		$argvMembers = $this->getArgvMembers();
+		if( $argvMembers['subcommand_name'] === null )
 		{
-			return;
+			throw new \OutOfBoundsException( "Subcommand name not defined" );
 		}
 
-		$this->arguments[] = $argument;
+		return $argvMembers['subcommand_name'];
 	}
 
 	/**
+	 * Returns value of given subcommand option if defined
+	 *
 	 * @param	string	$optionName
-	 * @param	mixed	$optionValue
+	 *
+	 * @throws	OutOfBoundsException	If subcommand option is not defined
+	 *
+	 * @return	mixed
+	 */
+	public function getSubcommandOption( string $optionName )
+	{
+		$argvMembers = $this->getArgvMembers();
+		if( !isset( $argvMembers['subcommand_options'][$optionName] ) )
+		{
+			throw new \OutOfBoundsException( "Command option '{$optionName}' not found" );
+		}
+
+		return $argvMembers['subcommand_options'][$optionName];
+	}
+
+	/**
+	 * Returns whether arguments contain a given application option
+	 *
+	 * @param	string	$optionName		ex., 'foo' or 'f'
+	 *
+	 * @return	boolean
+	 */
+	public function hasApplicationOption( string $optionName ) : bool
+	{
+		$argvMembers = $this->getArgvMembers();
+		return isset( $argvMembers['application_options'][$optionName] );
+	}
+
+	/**
+	 * Returns whether arguments contain a given argument, whether by index or
+	 * by name
+	 *
+	 * @param	int|string	$key
+	 *
+	 * @return	boolean
+	 */
+	public function hasArgument( $key ) : bool
+	{
+		$argvMembers = $this->getArgvMembers();
+
+		if( is_int( $key ) )
+		{
+			return isset( $argvMembers['arguments'][$key] );
+		}
+		else if( is_string( $key ) )
+		{
+			if( isset( $this->argumentNames[$key] ) )
+			{
+				return isset( $this->argv[$this->argumentNames[$key]] );
+			}
+
+			return false;
+		}
+	}
+
+	/**
+	 * Returns whether arguments contain a command
+	 *
+	 * Always returns `false` if self::recognizeCommand has not been called.
+	 *
+	 * @return	boolean
+	 */
+	public function hasCommand() : bool
+	{
+		if( !$this->shouldRecognizeCommand )
+		{
+			return false;
+		}
+
+		$argvMembers = $this->getArgvMembers();
+		return $argvMembers['command_name'] !== null;
+	}
+
+	/**
+	 * Returns whether arguments contain a given command option
+	 *
+	 * @param	string	$optionName
+	 *
+	 * @return	boolean
+	 */
+	public function hasCommandOption( string $optionName ) : bool
+	{
+		$argvMembers = $this->getArgvMembers();
+		return isset( $argvMembers['command_options'][$optionName] );
+	}
+
+	/**
+	 * Returns whether arguments contain a given environmental variable
+	 *
+	 * @param	string	$envName
+	 *
+	 * @return	boolean
+	 */
+	public function hasEnv( string $envName ) : bool
+	{
+		return isset( $this->env[$envName] );
+	}
+
+	/**
+	 * Returns whether $optionName is found as subcommand, command, or
+	 * application option
+	 *
+	 * @param	string	$optionName
+	 *
+	 * @return	boolean
+	 */
+	public function hasOption( string $optionName ) : bool
+	{
+		$hasOption = false;
+		$hasOption = $hasOption || $this->hasApplicationOption( $optionName );
+		$hasOption = $hasOption || $this->hasCommandOption( $optionName );
+		$hasOption = $hasOption || $this->hasSubcommandOption( $optionName );
+
+		return $hasOption;
+	}
+
+	/**
+	 * Returns whether arguments contain a subcommand
+	 *
+	 * Always returns `false` if self::recognizeSubcommand has not been called
+	 *
+	 * @return	boolean
+	 */
+	public function hasSubcommand() : bool
+	{
+		if( !$this->shouldRecognizeSubcommand )
+		{
+			return false;
+		}
+
+		$argvMembers = $this->getArgvMembers();
+		return $argvMembers['subcommand_name'] !== null;
+	}
+
+	/**
+	 * Returns whether arguments contain a given subcommand option
+	 *
+	 * @param	string	$optionName
+	 *
+	 * @return	boolean
+	 */
+	public function hasSubcommandOption( string $optionName ) : bool
+	{
+		$argvMembers = $this->getArgvMembers();
+		return isset( $argvMembers['subcommand_options'][$optionName] );
+	}
+
+	/**
+	 * Assigns friendly name to argument by index
+	 *
+	 * @param	int		$index
+	 *
+	 * @param	string	$name
+	 *
 	 * @return	void
 	 */
-	public function registerCommandOption( string $optionName, $optionValue )
+	public function nameArgument( int $index, string $name )
 	{
-		$this->commandOptions[$optionName] = $optionValue;
+		$this->argumentNames[$name] = $index;
+	}
+
+	/**
+	 * Specify whether arguments should adhere to `<app> <command>` pattern
+	 *
+	 * @param	bool	$shouldRecognizeCommand
+	 *
+	 * @return	void
+	 */
+	public function recognizeCommand( bool $shouldRecognizeCommand )
+	{
+		$this->shouldRecognizeCommand = $shouldRecognizeCommand;
+		$this->shouldParseArgumentsIntoMembers = true;
+	}
+
+	/**
+	 * Specify whether arguments should adhere to `<app> <command> <subcommand>`
+	 * pattern.
+	 *
+	 * Setting subcommand recognition to `true` implies command recognition
+	 * should also be `true`
+	 *
+	 * @param	bool	$shouldRecognizeSubcommand
+	 *
+	 * @return	void
+	 */
+	public function recognizeSubcommand( bool $shouldRecognizeSubcommand )
+	{
+		if( $shouldRecognizeSubcommand )
+		{
+			$this->recognizeCommand( true );
+		}
+
+		$this->shouldRecognizeSubcommand = $shouldRecognizeSubcommand;
+		$this->shouldParseArgumentsIntoMembers = true;
 	}
 }
