@@ -486,19 +486,23 @@ class Input implements InputInterface
 	{
 		$argvMembers = $this->getArgvMembers();
 
-		if( is_int( $key ) )
-		{
-			return isset( $argvMembers['arguments'][$key] );
-		}
-		else if( is_string( $key ) )
+		if( is_string( $key ) )
 		{
 			if( isset( $this->argumentNames[$key] ) )
 			{
-				return isset( $this->argv[$this->argumentNames[$key]] );
+				$index = $this->argumentNames[$key];
 			}
-
-			return false;
+			else
+			{
+				return false;
+			}
 		}
+		else
+		{
+			$index = $key;
+		}
+
+		return isset( $argvMembers['arguments'][$index] );
 	}
 
 	/**

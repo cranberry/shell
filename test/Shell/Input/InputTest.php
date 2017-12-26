@@ -587,6 +587,18 @@ class InputTest extends TestCase
 		$this->assertEquals( $shouldHaveArgument, $input->hasArgument( 0 ) );
 	}
 
+	public function test_hasArgument_withNamedArgument()
+	{
+		$appName = self::__getUniqueString( 'app' );
+
+		$input = new Input( [$appName], [] );
+
+		$input->nameArgument( 0, 'foo' );
+
+		$this->assertFalse( $input->hasArgument( 0 ) );
+		$this->assertFalse( $input->hasArgument( 'foo' ) );
+	}
+
 	/**
 	 * @dataProvider	provider_hasCommand
 	 */
