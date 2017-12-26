@@ -98,7 +98,6 @@ class Application
 		$this->pushErrorMiddleware( new Middleware\Middleware( [$this, '___invalidCommandCallback'], Exception\InvalidCommandException::class ) );
 		$this->pushErrorMiddleware( new Middleware\Middleware( [$this, '___invalidCommandUsageCallback'], Exception\InvalidCommandUsageException::class ) );
 	}
-
 	/**
 	 * Middleware callback for '--help' application option
 	 *
@@ -117,7 +116,7 @@ class Application
 
 		if( $input->hasCommand() )
 		{
-			$commandName = $input->getCommand();
+			$commandName = $input->getCommandName();
 
 			if( $this->hasCommandUsage( $commandName ) )
 			{
@@ -166,7 +165,7 @@ class Application
 	 */
 	public function ___invalidCommandCallback( Input\InputInterface $input, Output\OutputInterface &$output, Exception\InvalidCommandException $exception )
 	{
-		$output->write( sprintf( self::ERROR_STRING_INVALIDCOMMAND, $this->getName(), $input->getCommand() ) . PHP_EOL );
+		$output->write( sprintf( self::ERROR_STRING_INVALIDCOMMAND, $this->getName(), $input->getCommandName() ) . PHP_EOL );
 	}
 
 	/**
@@ -182,7 +181,7 @@ class Application
 	 */
 	public function ___invalidCommandUsageCallback( Input\InputInterface $input, Output\OutputInterface &$output, Exception\InvalidCommandUsageException $exception )
 	{
-		$commandName = $input->getCommand();
+		$commandName = $input->getCommandName();
 		$output->write( sprintf( self::STRING_COMMANDUSAGE, $this->getName(), $commandName, $this->getCommandUsage( $commandName ) ) . PHP_EOL );
 	}
 
@@ -407,7 +406,7 @@ class Application
 		{
 			$this->pushMiddleware( new Middleware\Middleware( function( Input\InputInterface &$input, Output\OutputInterface $output )
 			{
-				$input->parseSubcommand( true );
+				$input->recognizeSubcommand( true );
 				return Middleware\Middleware::CONTINUE;
 			}), $route );
 		}
@@ -415,7 +414,7 @@ class Application
 		{
 			$this->pushMiddleware( new Middleware\Middleware( function( Input\InputInterface &$input, Output\OutputInterface $output )
 			{
-				$input->parseSubcommand( false );
+				$input->recognizeSubcommand( false );
 				return Middleware\Middleware::CONTINUE;
 			}), $route );
 		}
@@ -454,7 +453,7 @@ class Application
 		{
 			if( $input->hasCommand() )
 			{
-				throw new Exception\InvalidCommandException( $input->getCommand() );
+				throw new Exception\InvalidCommandException( $input->getCommandName() );
 			}
 		}));
 
@@ -466,7 +465,7 @@ class Application
 
 		$middlewareParameters = &$this->middlewareParameters;
 
-		$route = $this->input->hasCommand() ? $this->input->getCommand() : '';
+		$route = $this->input->hasCommand() ? $this->input->getCommandName() : '';
 
 		try
 		{

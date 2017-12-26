@@ -270,6 +270,8 @@ class ApplicationTest extends TestCase
 		$commandUsage = 'usage-' . microtime( true );
 
 		$input = new Input\Input( [$appName, '--help', $commandName], [] );
+		$input->recognizeCommand( true );
+
 		$outputStub = $this->getOutputStub();
 
 		$application = new Application( $appName, '1.23', $input, $outputStub );
@@ -310,6 +312,8 @@ class ApplicationTest extends TestCase
 		$commandName = 'command-' . microtime( true );
 
 		$input = new Input\Input( [$appName, '--help', $commandName], [] );
+		$input->recognizeCommand( true );
+
 		$outputStub = $this->getOutputStub();
 
 		$application = new Application( $appName, '1.23', $input, $outputStub );
@@ -364,6 +368,8 @@ class ApplicationTest extends TestCase
 		$commandName = 'command-' . microtime( true );
 
 		$input = new Input\Input( [$appName, $commandName], [] );
+		$input->recognizeCommand( true );
+
 		$outputStub = $this->getOutputStub();
 
 		$application = new Application( $appName, '1.23', $input, $outputStub );
@@ -379,7 +385,7 @@ class ApplicationTest extends TestCase
 
 		$inputStub = $this->getInputStub();
 		$inputStub
-			->method( 'getCommand' )
+			->method( 'getCommandName' )
 			->willReturn( $commandName );
 
 		$outputStub = $this->getOutputStub();
@@ -405,7 +411,7 @@ class ApplicationTest extends TestCase
 
 		$inputStub = $this->getInputStub();
 		$inputStub
-			->method( 'getCommand' )
+			->method( 'getCommandName' )
 			->willReturn( $commandName );
 
 		$outputStub = $this->getOutputStub();
@@ -430,9 +436,11 @@ class ApplicationTest extends TestCase
 	{
 		$appName = 'app-' . microtime( true );
 		$commandName = 'command-' . microtime( true );
-		$commandUsage = '<arg1> [<arg2>]';
+		$commandUsage = 'arg1 [arg2]';
 
 		$input = new Input\Input( [$appName, $commandName], [] );
+		$input->recognizeCommand( true );
+
 		$outputStub = $this->getOutputStub();
 
 		$application = new Application( $appName, '1.23', $input, $outputStub );
@@ -464,6 +472,7 @@ class ApplicationTest extends TestCase
 		$commandName = 'command-' . microtime( true );
 
 		$input = new Input\Input( [$appName, $commandName], [] );
+		$input->recognizeCommand( true );
 		$output = new Output\Output();
 
 		$application = new Application( $appName, '1.23', $input, $output );
@@ -645,7 +654,7 @@ class ApplicationTest extends TestCase
 		$commandUsage = 'usage-' . microtime( true );
 		$commandMiddleware = new Middleware\Middleware( function( Input\InputInterface &$input, Output\OutputInterface $output )
 		{
-			$message = sprintf( 'Hello, %s!', $input->getSubcommand() );
+			$message = sprintf( 'Hello, %s!', $input->getSubcommandName() );
 			$output->write( $message );
 		} );
 		$subcommandName = 'subcommand-' . microtime( true );
@@ -685,7 +694,7 @@ class ApplicationTest extends TestCase
 
 		/* Confirm that input is now parsing for subcommands */
 		$this->assertTrue( $input->hasSubcommand() );
-		$this->assertEquals( $subcommandName, $input->getSubcommand() );
+		$this->assertEquals( $subcommandName, $input->getSubcommandName() );
 
 		/* Confirm that the command's middleware is actually being run */
 		$expectedOutput = $message = sprintf( 'Hello, %s!', $subcommandName );
@@ -718,6 +727,8 @@ class ApplicationTest extends TestCase
 	public function testRunRoutesMiddlewareWithCommandName()
 	{
 		$input = new Input\Input( ['cranberry', 'command'], [] );
+		$input->recognizeCommand( true );
+
 		$outputStub = $this->getOutputStub();
 
 		$application = new Application( 'foo', '1.23b', $input, $outputStub );
